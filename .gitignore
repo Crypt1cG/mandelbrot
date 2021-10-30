@@ -1,4 +1,4 @@
-balls/*
 .vscode/*
 bin/*
 obj/*
+*.dSYM
