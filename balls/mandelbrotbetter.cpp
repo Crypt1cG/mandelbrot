@@ -17,7 +17,6 @@ struct WindowInfo
     double minA, maxA;
     double minB, maxB;
     double rangeA, rangeB;
-    int sizeA, sizeB;
     int pixelWidth, pixelHeight;
     WindowInfo(double minA, double maxA, double minB, double maxB, uint64_t step)
     {
@@ -34,7 +33,7 @@ struct WindowInfo
     }
     void zoom(double zoomFactor, ComplexNum target)
     {
-        numIterations *= 1.8;
+        numIterations *= 2;
         rangeA = rangeA / zoomFactor;
         rangeB = rangeB / zoomFactor;
 
@@ -51,6 +50,7 @@ struct WindowInfo
     }
     friend std::ostream& operator<<(std::ostream& os, const WindowInfo& wi)
     {
+        std::cout.precision(17);
         os << "\t min\t\t| max\n\t----------------+------\nA:\t "
            << wi.minA << "\t\t| " << wi.maxA << "\t(range: " << wi.rangeA << ")"
            << "\nB:\t " << wi.minB << "\t\t| " << wi.maxB << "\t(range: " << wi.rangeB << ")"
@@ -79,6 +79,17 @@ double iterate(ComplexNum& z, const ComplexNum& c, int itLeft, const int& totalI
     return iterate(z, c, itLeft - 1, totalIterations);
 }
 
+int iterateNotNormalized(ComplexNum& z, const ComplexNum& c, int itLeft, const int& totalIterations)
+{
+    if (itLeft == 0)
+        return 0;
+    z.square();
+    z.a += c.a;
+    z.b += c.b;
+    if (z.squaredModulus() >= 4) return totalIterations - (itLeft - 1);
+    return iterateNotNormalized(z, c, itLeft - 1, totalIterations);
+}
+
 double* calculate(const WindowInfo& info, int numIterations)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -104,10 +115,15 @@ double* calculate(const WindowInfo& info, int numIterations)
                     z.a = 0;
                     z.b = 0;
 
-                    sum += iterate(z, c, numIterations, numIterations);
+                    sum += iterateNotNormalized(z, c, numIterations, numIterations);
                 }
             }
             results[index] = sum / 9;
+            // c.a = a;
+            // c.b = b;
+            // z.a = 0;
+            // z.b = 0;
+            // results[index] = iterateNotNormalized(z, c, numIterations, numIterations);
             index++;
         }
     }
@@ -126,7 +142,7 @@ sf::Color HSVToRGB(int h, float s, float v)
     
     double C = s * v;
     double X = C * (1 - abs((fmod(h / 60.0, 2)) - 1));
-    double m = 0;
+    double m = v - C;
     double r, g, b;
     if (h >= 0 && h < 60)
     {
@@ -190,33 +206,39 @@ sf::Color getColor(double V)
     //     G = color.g;
     //     B = color.b;
     // }
-    // else if (val <= 25)
-    // {
-    //     R = 0;
-    //     G = val * 10;
-    //     B = 0;
-    // }
-    // else
-    // {
-    //     // H = (((val - 25) * 2) % 360 + 120) % 360;
-    //     // H = ((((val - 25) / 3) * 2) % 360 + 120) % 360;
-    //     // H = 120 - sin((val - 25) / 4.0) * 100;
-    //     // H = 42 + (val % 3) * 140;
-    //     // float V = 1.0 - ((val - 25) / 360) * 0.1;
-    //     sf::Color color = HSVToRGB(H, 1, 0.9);
-    //     R = color.r;
-    //     G = color.g;
-    //     B = color.b;
-    // }
-    double K = 5;
-    V = log(V) / K;
-    // uint8_t R = 255 * ((1.0 - cos(V)) / 2.0);
-    // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
-    // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
-    uint8_t R = 255 * ((1.0 - cos(V / 10)) / 2.0);;
-    uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
-    uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
-    return sf::Color(R, G, B, 255);
+    else if (V <= 25)
+    {
+        int R = 0;
+        int G = V * 10;
+        int B = 0;
+        return sf::Color(R, G, B);
+    }
+    else
+    {
+        int H = ((((int)V - 25) * 2) % 360 + 120) % 360;
+        // H = ((((val - 25) / 3) * 2) % 360 + 120) % 360;
+        // H = 120 - sin((val - 25) / 4.0) * 100;
+        // H = 42 + (val % 3) * 140;
+        // float V = 1.0 - ((val - 25) / 360) * 0.1;
+        sf::Color color = HSVToRGB(H, 1, 0.9);
+        return color;
+    }
+    // double K = 5;
+    // V = log(V) / K;
+    // // // uint8_t R = 255 * ((1.0 - cos(V)) / 2.0);
+    // // // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
+    // // // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
+    // // uint8_t R = 255 * ((1.0 - cos(V / 10)) / 2.0);
+    // // // uint8_t R = 30;
+    // // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
+    // // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
+    // // // uint8_t B = 30;
+    // // return sf::Color(R, G, B, 255);
+
+    // int H = 174 + 50 * cos(V / 15);
+    // double v = 0.625 - (cos(V / 4) * .375);
+    // double s = 1.0 - (sin(V / 10) / 2 + 0.5);
+    // return HSVToRGB(H, s, v);
 }
 
 void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
@@ -316,63 +338,117 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(800, 800), "Mandlebrot");
+    sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
+    window.setFramerateLimit(60);
 
     WindowInfo initial(-2, 1, -1.5, 1.5, 256);
 
     double* results = calculate(initial, numIterations);
     ComplexNum target = ComplexNum(0, 0);
+    target.a = 0.360538544808150618340;
+    target.b = -0.64122620321722934023;
     display(results, initial, window, target);
 
+    const auto numCPUs = std::thread::hardware_concurrency();
+    std::cout << "Num cpus: " << numCPUs << std::endl;
     while (window.isOpen())
     {
         sf::Event event;
         while (window.pollEvent(event))
         {
+            std::cout << "Event received" << std::endl;
             // "close requested" event: we close the window
             if (event.type == sf::Event::Closed)
                 window.close();
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter)
+            else if (event.type == sf::Event::KeyPressed)
             {
-                initial.zoom(4, target);
-                std::cout << initial << std::endl;
-                delete [] results;
-                WindowInfo half1 = WindowInfo(initial.minA, initial.maxA, initial.minB, 
-                                              initial.minB + initial.rangeB / 2, initial.step);
-                WindowInfo half2 = WindowInfo(initial.minA, initial.maxA, initial.minB + 
-                                              initial.rangeB / 2 + 1.0 / initial.step, initial.maxB, 
-                                              initial.step);
-                // results = calculate(initial, numIterations);
-                std::future<double*> ret = std::async(calculate, half1, numIterations);
-                std::future<double*> ret2 = std::async(calculate, half2, numIterations);
-                double* results2 = ret.get();
-                results = new double[initial.pixelWidth * initial.pixelHeight];
-                std::copy(results2, results2 + half1.pixelHeight * half1.pixelWidth, results);
-                delete [] results2;
-                results2 = ret2.get();
-                std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
-            }
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-            {
-                initial.zoom(0.25, target);
-                delete [] results;
-                results = calculate(initial, numIterations);
-            }
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right)
-            {
-                target.a += 2.0 / initial.step;
-            }
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Left)
-            {
-                target.a -= 2.0 / initial.step;
-            }
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up)
-            {
-                target.b -= 2.0 / initial.step;
-            }
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down)
-            {
-                target.b += 2.0 / initial.step;
+                if (event.key.code == sf::Keyboard::Enter)
+                {
+                    initial.zoom(4, target);
+                    std::cout << initial << std::endl;
+                    delete [] results;
+                    if (numCPUs == 2)
+                    {
+                        WindowInfo half1 = WindowInfo(initial.minA, initial.maxA, initial.minB, 
+                                                    initial.minB + initial.rangeB / 2, initial.step);
+                        WindowInfo half2 = WindowInfo(initial.minA, initial.maxA, initial.minB + 
+                                                    initial.rangeB / 2 + 1.0 / initial.step, initial.maxB, 
+                                                    initial.step);
+                        // results = calculate(initial, numIterations);
+                        std::future<double*> ret = std::async(calculate, half1, numIterations);
+                        std::future<double*> ret2 = std::async(calculate, half2, numIterations);
+                        double* results2 = ret.get();
+                        results = new double[initial.pixelWidth * initial.pixelHeight];
+                        std::copy(results2, results2 + half1.pixelHeight * half1.pixelWidth, results);
+                        delete [] results2;
+                        results2 = ret2.get();
+                        std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
+                    }
+                    else
+                    {
+                        WindowInfo quarter1 = WindowInfo(initial.minA, initial.maxA,
+                                                        initial.minB, initial.minB + initial.rangeB / 4,
+                                                        initial.step);
+                        WindowInfo quarter2 = WindowInfo(initial.minA, initial.maxA,
+                                                        initial.minB + initial.rangeB / 4 + 1.0 / initial.step,
+                                                        initial.minB + initial.rangeB / 2,
+                                                        initial.step);
+                        WindowInfo quarter3 = WindowInfo(initial.minA, initial.maxA,
+                                                        initial.minB + initial.rangeB / 2 + 1.0 / initial.step,
+                                                        initial.minB + initial.rangeB * 0.75,
+                                                        initial.step);
+                        WindowInfo quarter4 = WindowInfo(initial.minA, initial.maxA,
+                                                        initial.minB + initial.rangeB * 0.75 + 1.0 / initial.step, initial.maxB,
+                                                        initial.step);
+                        // std::cout << quarter1 << std::endl << quarter2 << std::endl << quarter3 << std::endl << quarter4 << std::endl;
+                        results = new double[initial.pixelWidth * initial.pixelHeight];
+                        std::future<double*> ret1 = std::async(calculate, quarter1, numIterations);
+                        std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
+                        std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
+                        std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
+                        double* tempResults = ret1.get();
+                        std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
+                        delete [] tempResults;
+                        tempResults = ret2.get();
+                        std::copy(tempResults, tempResults + quarter2.pixelWidth * quarter2.pixelHeight, results + quarter1.pixelWidth * quarter1.pixelHeight);
+                        delete [] tempResults;
+                        tempResults = ret3.get();
+                        std::copy(tempResults, tempResults + quarter3.pixelWidth * quarter3.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
+                                                                                                                quarter2.pixelHeight * quarter2.pixelWidth);
+                        delete [] tempResults;
+                        tempResults = ret4.get();
+                        std::copy(tempResults, tempResults + quarter4.pixelWidth * quarter4.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
+                                                                                                                quarter2.pixelHeight * quarter2.pixelWidth +
+                                                                                                                quarter3.pixelHeight * quarter3.pixelWidth);
+                    }
+                }
+                else if (event.key.code == sf::Keyboard::Escape)
+                {
+                    initial.zoom(0.25, target);
+                    delete [] results;
+                    results = calculate(initial, numIterations);
+                }
+                else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D)
+                {
+                    target.a += 2.0 / initial.step;
+                }
+                else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A)
+                {
+                    target.a -= 2.0 / initial.step;
+                }
+                else if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W)
+                {
+                    target.b -= 2.0 / initial.step;
+                }
+                else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S)
+                {
+                    target.b += 2.0 / initial.step;
+                }
+                else if (event.key.code == sf::Keyboard::Space)
+                {
+                    std::cout.precision(20);
+                    std::cout << target.a << " + " << target.b << "i" << std::endl;
+                }
             }
             display(results, initial, window, target);
         }
