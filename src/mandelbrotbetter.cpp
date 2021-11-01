@@ -6,7 +6,6 @@
 #include <chrono>
 #include <thread>
 #include <future>
-#define NUM_ITERATIONS 12
 #define SCALE 1
 double numIterations = 30;
 double magnification = 1;
@@ -33,7 +32,9 @@ struct WindowInfo
     }
     void zoom(double zoomFactor, ComplexNum target)
     {
-        numIterations *= 2;
+        if (zoomFactor > 1)
+            numIterations *= 2;
+        else numIterations /= 2;
         rangeA = rangeA / zoomFactor;
         rangeB = rangeB / zoomFactor;
 
@@ -60,7 +61,7 @@ struct WindowInfo
     }
 };
 
-double iterate(ComplexNum& z, const ComplexNum& c, int itLeft, const int& totalIterations)
+double iterate(ComplexNum& z, const ComplexNum& c, int itLeft)
 {
     if (itLeft == 0)
         return 0;
@@ -73,21 +74,21 @@ double iterate(ComplexNum& z, const ComplexNum& c, int itLeft, const int& totalI
     double R = z.squaredModulus();
     if (R >= 9) 
     {
-        double V = log(R) / pow(2, totalIterations - itLeft);
+        double V = log(R) / pow(2, numIterations - itLeft);
         return V;
     }
-    return iterate(z, c, itLeft - 1, totalIterations);
+    return iterate(z, c, itLeft - 1);
 }
 
-int iterateNotNormalized(ComplexNum& z, const ComplexNum& c, int itLeft, const int& totalIterations)
+int iterateNotNormalized(ComplexNum& z, const ComplexNum& c, int itLeft)
 {
     if (itLeft == 0)
         return 0;
     z.square();
     z.a += c.a;
     z.b += c.b;
-    if (z.squaredModulus() >= 4) return totalIterations - (itLeft - 1);
-    return iterateNotNormalized(z, c, itLeft - 1, totalIterations);
+    if (z.squaredModulus() >= 4) return numIterations - (itLeft - 1);
+    return iterateNotNormalized(z, c, itLeft - 1);
 }
 
 double* calculate(const WindowInfo& info, int numIterations)
@@ -115,7 +116,8 @@ double* calculate(const WindowInfo& info, int numIterations)
                     z.a = 0;
                     z.b = 0;
 
-                    sum += iterateNotNormalized(z, c, numIterations, numIterations);
+                    // sum += iterateNotNormalized(z, c, numIterations);
+                    sum += iterate(z, c, numIterations);
                 }
             }
             results[index] = sum / 9;
@@ -134,7 +136,6 @@ double* calculate(const WindowInfo& info, int numIterations)
 }
 
 // https://www.codespeedy.com/hsv-to-rgb-in-cpp/
-// ******assuming saturation and value is always 1
 sf::Color HSVToRGB(int h, float s, float v)
 {
     // if (s != 1.0 || v != 1.0)
@@ -206,39 +207,39 @@ sf::Color getColor(double V)
     //     G = color.g;
     //     B = color.b;
     // }
-    else if (V <= 25)
-    {
-        int R = 0;
-        int G = V * 10;
-        int B = 0;
-        return sf::Color(R, G, B);
-    }
-    else
-    {
-        int H = ((((int)V - 25) * 2) % 360 + 120) % 360;
-        // H = ((((val - 25) / 3) * 2) % 360 + 120) % 360;
-        // H = 120 - sin((val - 25) / 4.0) * 100;
-        // H = 42 + (val % 3) * 140;
-        // float V = 1.0 - ((val - 25) / 360) * 0.1;
-        sf::Color color = HSVToRGB(H, 1, 0.9);
-        return color;
-    }
-    // double K = 5;
-    // V = log(V) / K;
-    // // // uint8_t R = 255 * ((1.0 - cos(V)) / 2.0);
-    // // // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
-    // // // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
-    // // uint8_t R = 255 * ((1.0 - cos(V / 10)) / 2.0);
-    // // // uint8_t R = 30;
+    // else if (V <= 25)
+    // {
+    //     int R = 0;
+    //     int G = V * 10;
+    //     int B = 0;
+    //     return sf::Color(R, G, B);
+    // }
+    // else
+    // {
+    //     int H = ((((int)V - 25) * 2) % 360 + 120) % 360;
+    //     // H = ((((val - 25) / 3) * 2) % 360 + 120) % 360;
+    //     // H = 120 - sin((val - 25) / 4.0) * 100;
+    //     // H = 42 + (val % 3) * 140;
+    //     // float V = 1.0 - ((val - 25) / 360) * 0.1;
+    //     sf::Color color = HSVToRGB(H, 1, 0.9);
+        // return color;
+    // }
+    double K = 5;
+    V = log(V) / K;
+    // // uint8_t R = 255 * ((1.0 - cos(V)) / 2.0);
     // // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
     // // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
-    // // // uint8_t B = 30;
-    // // return sf::Color(R, G, B, 255);
+    // uint8_t R = 255 * ((1.0 - cos(V / 10)) / 2.0);
+    // // uint8_t R = 30;
+    // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
+    // uint8_t B = 255 * ((1.0 - cos(V / (7 * pow(3, 1.0 / 8)))) / 2.0);
+    // // uint8_t B = 30;
+    // return sf::Color(R, G, B, 255);
 
-    // int H = 174 + 50 * cos(V / 15);
-    // double v = 0.625 - (cos(V / 4) * .375);
-    // double s = 1.0 - (sin(V / 10) / 2 + 0.5);
-    // return HSVToRGB(H, s, v);
+    int H = 174 + 50 * cos(V / 15);
+    double v = 0.625 - (cos(V / 4) * .375);
+    double s = 1.0 - (sin(V / 3) / 2 + 0.5);
+    return HSVToRGB(174, s, v);
 }
 
 void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
@@ -455,11 +456,3 @@ int main()
     }
     return 0;
 }
-
-// int main()
-// {
-//     ComplexNum C = ComplexNum(-1.2566303, 0.0308026);
-//     ComplexNum zero = ComplexNum(0, 0);
-//     int res = iterate(zero, C, 500, 500);
-//     std::cout << res << std::endl;
-// }

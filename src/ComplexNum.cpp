@@ -31,3 +31,9 @@ double ComplexNum::squaredModulus()
 {
     return a * a + b * b;
 }
+
+ComplexNum ComplexNum::operator+(const ComplexNum& other)
+{
+    this->a += other.a;
+    this->b += other.b;
+}
