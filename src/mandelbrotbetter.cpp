@@ -9,6 +9,7 @@
 #define SCALE 1
 double numIterations = 30;
 double magnification = 1;
+unsigned int NUM_CPUS;
 
 struct WindowInfo
 {
@@ -337,6 +338,66 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     delete [] pixels;
 }
 
+double* getResults(const WindowInfo& info)
+{
+    double* results;
+    if (NUM_CPUS == 2)
+    {
+        WindowInfo half1 = WindowInfo(info.minA, info.maxA, info.minB, 
+                                    info.minB + info.rangeB / 2, info.step);
+        WindowInfo half2 = WindowInfo(info.minA, info.maxA, info.minB + 
+                                    info.rangeB / 2 + 1.0 / info.step, info.maxB, 
+                                    info.step);
+        // results = calculate(info, numIterations);
+        std::future<double*> ret = std::async(calculate, half1, numIterations);
+        std::future<double*> ret2 = std::async(calculate, half2, numIterations);
+        double* results2 = ret.get();
+        results = new double[info.pixelWidth * info.pixelHeight];
+        std::copy(results2, results2 + half1.pixelHeight * half1.pixelWidth, results);
+        delete [] results2;
+        results2 = ret2.get();
+        std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
+    }
+    else
+    {
+        WindowInfo quarter1 = WindowInfo(info.minA, info.maxA,
+                                        info.minB, info.minB + info.rangeB / 4,
+                                        info.step);
+        WindowInfo quarter2 = WindowInfo(info.minA, info.maxA,
+                                        info.minB + info.rangeB / 4 + 1.0 / info.step,
+                                        info.minB + info.rangeB / 2,
+                                        info.step);
+        WindowInfo quarter3 = WindowInfo(info.minA, info.maxA,
+                                        info.minB + info.rangeB / 2 + 1.0 / info.step,
+                                        info.minB + info.rangeB * 0.75,
+                                        info.step);
+        WindowInfo quarter4 = WindowInfo(info.minA, info.maxA,
+                                        info.minB + info.rangeB * 0.75 + 1.0 / info.step, info.maxB,
+                                        info.step);
+        // std::cout << quarter1 << std::endl << quarter2 << std::endl << quarter3 << std::endl << quarter4 << std::endl;
+        results = new double[info.pixelWidth * info.pixelHeight];
+        std::future<double*> ret1 = std::async(calculate, quarter1, numIterations);
+        std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
+        std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
+        std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
+        double* tempResults = ret1.get();
+        std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
+        delete [] tempResults;
+        tempResults = ret2.get();
+        std::copy(tempResults, tempResults + quarter2.pixelWidth * quarter2.pixelHeight, results + quarter1.pixelWidth * quarter1.pixelHeight);
+        delete [] tempResults;
+        tempResults = ret3.get();
+        std::copy(tempResults, tempResults + quarter3.pixelWidth * quarter3.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
+                                                                                                quarter2.pixelHeight * quarter2.pixelWidth);
+        delete [] tempResults;
+        tempResults = ret4.get();
+        std::copy(tempResults, tempResults + quarter4.pixelWidth * quarter4.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
+                                                                                                quarter2.pixelHeight * quarter2.pixelWidth +
+                                                                                                quarter3.pixelHeight * quarter3.pixelWidth);
+    }
+    return results;
+}
+
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
@@ -350,8 +411,8 @@ int main()
     target.b = -0.64122620321722934023;
     display(results, initial, window, target);
 
-    const auto numCPUs = std::thread::hardware_concurrency();
-    std::cout << "Num cpus: " << numCPUs << std::endl;
+    NUM_CPUS = std::thread::hardware_concurrency();
+    std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
     {
         sf::Event event;
@@ -368,60 +429,7 @@ int main()
                     initial.zoom(4, target);
                     std::cout << initial << std::endl;
                     delete [] results;
-                    if (numCPUs == 2)
-                    {
-                        WindowInfo half1 = WindowInfo(initial.minA, initial.maxA, initial.minB, 
-                                                    initial.minB + initial.rangeB / 2, initial.step);
-                        WindowInfo half2 = WindowInfo(initial.minA, initial.maxA, initial.minB + 
-                                                    initial.rangeB / 2 + 1.0 / initial.step, initial.maxB, 
-                                                    initial.step);
-                        // results = calculate(initial, numIterations);
-                        std::future<double*> ret = std::async(calculate, half1, numIterations);
-                        std::future<double*> ret2 = std::async(calculate, half2, numIterations);
-                        double* results2 = ret.get();
-                        results = new double[initial.pixelWidth * initial.pixelHeight];
-                        std::copy(results2, results2 + half1.pixelHeight * half1.pixelWidth, results);
-                        delete [] results2;
-                        results2 = ret2.get();
-                        std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
-                    }
-                    else
-                    {
-                        WindowInfo quarter1 = WindowInfo(initial.minA, initial.maxA,
-                                                        initial.minB, initial.minB + initial.rangeB / 4,
-                                                        initial.step);
-                        WindowInfo quarter2 = WindowInfo(initial.minA, initial.maxA,
-                                                        initial.minB + initial.rangeB / 4 + 1.0 / initial.step,
-                                                        initial.minB + initial.rangeB / 2,
-                                                        initial.step);
-                        WindowInfo quarter3 = WindowInfo(initial.minA, initial.maxA,
-                                                        initial.minB + initial.rangeB / 2 + 1.0 / initial.step,
-                                                        initial.minB + initial.rangeB * 0.75,
-                                                        initial.step);
-                        WindowInfo quarter4 = WindowInfo(initial.minA, initial.maxA,
-                                                        initial.minB + initial.rangeB * 0.75 + 1.0 / initial.step, initial.maxB,
-                                                        initial.step);
-                        // std::cout << quarter1 << std::endl << quarter2 << std::endl << quarter3 << std::endl << quarter4 << std::endl;
-                        results = new double[initial.pixelWidth * initial.pixelHeight];
-                        std::future<double*> ret1 = std::async(calculate, quarter1, numIterations);
-                        std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
-                        std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
-                        std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
-                        double* tempResults = ret1.get();
-                        std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
-                        delete [] tempResults;
-                        tempResults = ret2.get();
-                        std::copy(tempResults, tempResults + quarter2.pixelWidth * quarter2.pixelHeight, results + quarter1.pixelWidth * quarter1.pixelHeight);
-                        delete [] tempResults;
-                        tempResults = ret3.get();
-                        std::copy(tempResults, tempResults + quarter3.pixelWidth * quarter3.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
-                                                                                                                quarter2.pixelHeight * quarter2.pixelWidth);
-                        delete [] tempResults;
-                        tempResults = ret4.get();
-                        std::copy(tempResults, tempResults + quarter4.pixelWidth * quarter4.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
-                                                                                                                quarter2.pixelHeight * quarter2.pixelWidth +
-                                                                                                                quarter3.pixelHeight * quarter3.pixelWidth);
-                    }
+                    results = getResults(initial);
                 }
                 else if (event.key.code == sf::Keyboard::Escape)
                 {
@@ -449,6 +457,12 @@ int main()
                 {
                     std::cout.precision(20);
                     std::cout << target.a << " + " << target.b << "i" << std::endl;
+                }
+                else if (event.key.code == sf::Keyboard::I)
+                {
+                    numIterations *= 2;
+                    delete [] results;
+                    results = getResults(initial);
                 }
             }
             display(results, initial, window, target);
