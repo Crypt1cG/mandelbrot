@@ -14,6 +14,10 @@
 
 After compiling with `make`, the binary will be in bin/mandelbrot
 
+## Permissions
+
+(mac) You will have to allow a shit ton of libs to run by going to system preferences/security & privacy/general 
+
 ### Keybindings
 - Enter zooms in (4x)
 - Arrow keys or WASD move the target cursor (the place where it will zoom in)
