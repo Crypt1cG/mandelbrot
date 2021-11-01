@@ -441,30 +441,38 @@ int main()
                 //added hold shift for faster cursor (sorry need to fix magic numbers ik)
                 else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D)
                 {
-                	if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || event.key.code == sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)){
-				        shift = movement_factor * 2;}
-			        else{shift = movement_factor;}
+                	if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                    {
+				        shift = movement_factor * 2;
+                    }
+			        else shift = movement_factor;
 			        target.a += shift / initial.step;
                 }
                 else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A)
                 {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || event.key.code == sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)){
-				        shift = movement_factor * 2;}
-			        else{shift = movement_factor;}
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                    {
+				        shift = movement_factor * 2;
+                    }
+			        else shift = movement_factor;
                     target.a -= shift / initial.step;
                 }
                 else if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W)
                 {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || event.key.code == sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)){
-				        shift = movement_factor * 2;}
-			        else{shift = movement_factor;}
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                    {
+				        shift = movement_factor * 2;
+                    }
+			        else shift = movement_factor;
                     target.b -= shift / initial.step;
                 }
                 else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S)
                 {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || event.key.code == sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)){
-				        shift = movement_factor * 2;}
-			        else{shift = movement_factor;}
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                    {
+				        shift = movement_factor * 2;
+                    }
+			        else shift = movement_factor;
                     target.b += shift / initial.step;
                 }
                 else if (event.key.code == sf::Keyboard::Space)
