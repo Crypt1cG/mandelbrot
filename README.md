@@ -21,4 +21,6 @@ After compiling with `make`, the binary will be in bin/mandelbrot
 ### Keybindings
 - Enter zooms in (4x)
 - Arrow keys or WASD move the target cursor (the place where it will zoom in)
+  - Pressing shift while using movement keys makes the cursor move faster
 - Escape zooms out
+- Pressing I increases the current number of iterations and redraws
