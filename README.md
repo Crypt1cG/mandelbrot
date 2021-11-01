@@ -9,3 +9,12 @@
 ### SFML
 - You will need SFML installed on your system and added to your PATH for compilation to work
 - SFML can be found here: https://www.sfml-dev.org/index.php
+
+## Usage
+
+After compiling with `make`, the binary will be in bin/mandelbrot
+
+### Keybindings
+- Enter zooms in (4x)
+- Arrow keys or WASD move the target cursor (the place where it will zoom in)
+- Escape zooms out
