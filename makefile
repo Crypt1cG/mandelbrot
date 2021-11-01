@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -Ofast -std=c++17 -o bin/mandelbrot
+CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -Ofast -std=c++17 -pthread -o bin/mandelbrot
 
 # @ supresses output from command
 
