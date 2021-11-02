@@ -42,5 +42,5 @@ public:
     /**
      * Adds another complex number to this one
      */
-    ComplexNum operator+(const ComplexNum& other);
+    ComplexNum operator+=(const ComplexNum& other);
 };

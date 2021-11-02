@@ -64,11 +64,10 @@ struct WindowInfo
 
 double iterate(ComplexNum& z, const ComplexNum& c, int itLeft)
 {
-    if (itLeft == 0)
+    if (itLeft == 0) // we have done all iterations and the number is still in the mandelbrot set
         return 0;
     z.square();
-    z.a += c.a;
-    z.b += c.b;
+    z += c;
     // if (new_z.squaredModulus() >= 4) return totalIterations - (itLeft - 1);
     // if (new_z.abs() >= 1000) return totalIterations - (itLeft - 1);
     // if (new_z.abs() >= 2) return (totalIterations - itLeft) + 1 - log(log2(new_z.abs()));
@@ -95,17 +94,19 @@ int iterateNotNormalized(ComplexNum& z, const ComplexNum& c, int itLeft)
 double* calculate(const WindowInfo& info, int numIterations)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
-    double* results = new double[info.pixelWidth * info.pixelHeight]; // allocate on heap bc stack not big enough
+    double* results = new double[info.pixelWidth * info.pixelHeight];
     int index = 0;
 
     ComplexNum z = ComplexNum(0, 0);
     ComplexNum c = ComplexNum(0, 0);
-    double res;
-    for (double b = info.minB; b <= info.maxB; b += 1.0 / info.step)
+    for (double b = info.minB; b <= info.maxB; b += 1.0 / info.step) // loop from min to max incrementing by step
     {
-        for (double a = info.minA; a <= info.maxA; a += 1.0 / info.step)
+        for (double a = info.minA; a <= info.maxA; a += 1.0 / info.step) // loop from min to max incrementing by step
         {
             double sum = 0;
+            // super sampling stuff - use 3x3 grid of sub-pixels (centered on the
+            // main pixel) and average them to get the value for the pixel - this
+            // is super sampling, it helps reduce graininess
             for (int i = -1; i < 2; i++)
             {
                 for (int j = -1; j < 2; j++)
@@ -114,6 +115,7 @@ double* calculate(const WindowInfo& info, int numIterations)
                     c.b = b + j * (1 / (info.step * 3.0));
                     // c.a = a;
                     // c.b = b;
+                    // reset z to zero
                     z.a = 0;
                     z.b = 0;
 
@@ -121,6 +123,7 @@ double* calculate(const WindowInfo& info, int numIterations)
                     sum += iterate(z, c, numIterations);
                 }
             }
+
             results[index] = sum / 9;
             // c.a = a;
             // c.b = b;
@@ -136,12 +139,18 @@ double* calculate(const WindowInfo& info, int numIterations)
     return results;
 }
 
-// https://www.codespeedy.com/hsv-to-rgb-in-cpp/
+/**
+ * this just converts a color from HSV to RGB, it is useful because SMFL uses
+ * RGB only, and sometimes generating colors in HSV is nice
+ * source: https://www.codespeedy.com/hsv-to-rgb-in-cpp/
+ * @param h the hue of the color (0 - 360)
+ * @param s the saturation value of the color (0.0 - 1.0)
+ * @param v the value of the volor (0.0 - 1.0)
+ * 
+ * @return an SMFL color object with the correct RGB values
+ */
 sf::Color HSVToRGB(int h, float s, float v)
-{
-    // if (s != 1.0 || v != 1.0)
-    //     throw std::invalid_argument("Saturation and Value should be 1.0 for rn");
-    
+{   
     double C = s * v;
     double X = C * (1 - abs((fmod(h / 60.0, 2)) - 1));
     double m = v - C;
@@ -190,9 +199,16 @@ sf::Color HSVToRGB(int h, float s, float v)
     return sf::Color(R, G, B, 255);
 }
 
+/**
+ * Gets the appropriate color for a pixel based on its value V (which comes
+ * from the iterate function)
+ * 
+ * @param V the value of the pixel (returned from iterate)
+ * @return an SFML color
+ */
 sf::Color getColor(double V)
 {
-    if (V == 0)
+    if (V == 0) // num is in the mandelbrot set
         return sf::Color::Black;
     // else
     // {
@@ -247,37 +263,16 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 {
     window.clear(sf::Color::White);
     int scale = SCALE;
-    // uint8_t color_map_thing[][3] = {{0, 0, 0},   {0, 10, 0},  {0, 25, 0},  {0, 40, 0}, 
-    //                                 {0, 55, 0},  {0, 70, 0},  {0, 85, 0},  {0, 100, 0}, 
-    //                                 {0, 115, 0}, {0, 130, 0}, {0, 145, 0}, {0, 160, 0}, 
-    //                                 {0, 175, 0}, {0, 190, 0}, {0, 205, 0}, {0, 220, 0}, 
-    //                                 {0, 235, 0}, {0, 250, 0}, {255, 0, 0}};
     sf::Image img;
     uint8_t* pixels = new uint8_t[4 * info.pixelWidth * info.pixelHeight];
     for (int y = 0; y < info.pixelHeight; y++)
     {
         for (int x = 0; x < info.pixelWidth; x++)
         {
-            // int RSum, GSum, BSum;
-            // for (int i = 0; i < 2; i++)
-            // {
-            //     for (int j = 0; j < 2; j++)
-            //     {
-            //         double V = results[(y + j) * info.pixelWidth + x + i];
-            //         sf::Color color = getColor(V);
-            //         RSum += color.r;
-            //         GSum += color.g;
-            //         BSum += color.b;
-            //     }
-            // }
-            // uint8_t R = RSum == 0 ? RSum : RSum / 4;
-            // uint8_t G = GSum == 0 ? GSum : GSum / 4;
-            // uint8_t B = BSum == 0 ? BSum : BSum / 4;
             sf::Color color = getColor(results[y * info.pixelWidth + x]);
             uint8_t R = color.r;
             uint8_t G = color.g;
             uint8_t B = color.b;
-            // std::cout << "Val: " << val << " H: " << H << " R: " << (int)R << " G: " << (int)G << " B: " << (int)B << std::endl;
             pixels[4 * (y * info.pixelWidth + x)] = R;
             pixels[4 * (y * info.pixelWidth + x) + 1] = G;
             pixels[4 * (y * info.pixelWidth + x) + 2] = B;
@@ -325,7 +320,7 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     sf::Font font;
     font.loadFromFile("res/Arial Unicode.ttf");
     sf::Text text;
-    text.setString("Magnification: " + std::to_string(magnification) + 
+    text.setString("Magnification: " + std::to_string((int)magnification) + 
                    "\tIterations: " + std::to_string((int)(numIterations)) + 
                    "\tCrosshair: " + std::to_string(target.a) + " + " + std::to_string(-target.b) + "i");
     text.setFont(font);
@@ -358,8 +353,9 @@ double* getResults(const WindowInfo& info)
         results2 = ret2.get();
         std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
     }
-    else
+    else // assuming 4 cpus
     {
+        // chop into 4 pieces
         WindowInfo quarter1 = WindowInfo(info.minA, info.maxA,
                                         info.minB, info.minB + info.rangeB / 4,
                                         info.step);
@@ -376,10 +372,13 @@ double* getResults(const WindowInfo& info)
                                         info.step);
         // std::cout << quarter1 << std::endl << quarter2 << std::endl << quarter3 << std::endl << quarter4 << std::endl;
         results = new double[info.pixelWidth * info.pixelHeight];
+
+        // make threads for each piece to do them asynchronously
         std::future<double*> ret1 = std::async(calculate, quarter1, numIterations);
         std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
         std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
         std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
+        
         double* tempResults = ret1.get();
         std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
         delete [] tempResults;
