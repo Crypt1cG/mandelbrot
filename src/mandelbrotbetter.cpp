@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <gmp.h>
 #define SCALE 1
 double numIterations = 30;
 double magnification = 1;
@@ -85,8 +86,7 @@ int iterateNotNormalized(ComplexNum& z, const ComplexNum& c, int itLeft)
     if (itLeft == 0)
         return 0;
     z.square();
-    z.a += c.a;
-    z.b += c.b;
+    z += c;
     if (z.squaredModulus() >= 4) return numIterations - (itLeft - 1);
     return iterateNotNormalized(z, c, itLeft - 1);
 }
@@ -99,9 +99,11 @@ double* calculate(const WindowInfo& info, int numIterations)
 
     ComplexNum z = ComplexNum(0, 0);
     ComplexNum c = ComplexNum(0, 0);
-    for (double b = info.minB; b <= info.maxB; b += 1.0 / info.step) // loop from min to max incrementing by step
+    double actualStep = 1.0 / info.step;
+    std::cout << actualStep << std::endl;
+    for (double b = info.minB; b <= info.maxB; b += actualStep) // loop from min to max incrementing by step
     {
-        for (double a = info.minA; a <= info.maxA; a += 1.0 / info.step) // loop from min to max incrementing by step
+        for (double a = info.minA; a <= info.maxA; a += actualStep) // loop from min to max incrementing by step
         {
             double sum = 0;
             // super sampling stuff - use 3x3 grid of sub-pixels (centered on the
@@ -320,7 +322,7 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     sf::Font font;
     font.loadFromFile("res/Arial Unicode.ttf");
     sf::Text text;
-    text.setString("Magnification: " + std::to_string((int)magnification) + 
+    text.setString("Magnification: " + std::to_string(magnification) + 
                    "\tIterations: " + std::to_string((int)(numIterations)) + 
                    "\tCrosshair: " + std::to_string(target.a) + " + " + std::to_string(-target.b) + "i");
     text.setFont(font);
@@ -378,7 +380,7 @@ double* getResults(const WindowInfo& info)
         std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
         std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
         std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
-        
+
         double* tempResults = ret1.get();
         std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
         delete [] tempResults;

@@ -10,13 +10,13 @@
 - You will need SFML installed on your system and added to your PATH for compilation to work
 - SFML can be found here: https://www.sfml-dev.org/index.php
 
+### Permissions
+
+(mac) You will have to allow a shit ton of libs to run by going to system preferences/security & privacy/general 
+
 ## Usage
 
 After compiling with `make`, the binary will be in bin/mandelbrot
-
-## Permissions
-
-(mac) You will have to allow a shit ton of libs to run by going to system preferences/security & privacy/general 
 
 ### Keybindings
 - Enter zooms in (4x)
