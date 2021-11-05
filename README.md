@@ -1,4 +1,3 @@
-# HI NEVEN THIS IS A REMINDER TO COMMENT MORE! IT MAKES EVERYTHING EASIER AND BETTER IN THE LONG TERM 
 # Mandelbrot Set Viewer Written in C++
 
 ## Prerequisites
