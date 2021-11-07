@@ -1,4 +1,5 @@
 // #include <gmp.h>
+#pragma once
 
 class ComplexNum
 {
