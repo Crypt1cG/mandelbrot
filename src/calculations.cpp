@@ -1,4 +1,4 @@
-#include "calculations.hpp"
+#include "include/calculations.hpp"
 
 unsigned int NUM_CPUS;
 double numIterations = 30;

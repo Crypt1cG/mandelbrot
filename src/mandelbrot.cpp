@@ -1,13 +1,13 @@
 #include <math.h>
-#include "ComplexNum.hpp"
+#include "include/ComplexNum.hpp"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <exception>
 #include <chrono>
-#include <gmp.h>
+// #include <gmp.h>
 #include <thread>
-#include "WindowInfo.hpp"
-#include "calculations.hpp"
+#include "include/WindowInfo.hpp"
+#include "include/calculations.hpp"
 #define SCALE 1
 double magnification = 1;
 

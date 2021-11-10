@@ -1,4 +1,4 @@
-#include "WindowInfo.hpp"
+#include "include/WindowInfo.hpp"
 
 WindowInfo::WindowInfo(double minA, double maxA, double minB, double maxB, uint64_t step)
 {
