@@ -219,7 +219,6 @@ int main()
     target.b = -0.64122620321722934023;
     display(results, initial, window, target);
 
-    NUM_CPUS = std::thread::hardware_concurrency();
     std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
     {

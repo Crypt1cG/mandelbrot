@@ -1,7 +1,7 @@
 #include "include/calculations.hpp"
 #include <vector>
 
-unsigned int NUM_CPUS;
+const unsigned int NUM_CPUS = std::thread::hardware_concurrency();
 double numIterations = 30;
 
 double iterate(ComplexNum& z, const ComplexNum& c, int itLeft)
@@ -145,7 +145,7 @@ double* getResults(const WindowInfo& info)
         int index = 0;
         for (int i = 0; i < 16 / NUM_CPUS; i++) // do 4 sections of 4 (16 pieces, 4 at a time)
         {
-            WindowInfo pieces[NUM_CPUS] = {};
+            WindowInfo* pieces = new WindowInfo[NUM_CPUS];
             for (int j = i * NUM_CPUS; j < (i + 1) * NUM_CPUS; j++) // j is actual "piece #"
             {
                 WindowInfo piece;
@@ -176,7 +176,7 @@ double* getResults(const WindowInfo& info)
             // std::future<double*> ret4 = std::async(calculate, pieces[3], numIterations);
 
             // array of double arrays (double*), each double* is the results from one of the sections
-            double* allResults[NUM_CPUS] = {};
+            double** allResults = new double*[NUM_CPUS];
             for (int n = 0; n < NUM_CPUS; n++)
             {
                 allResults[n] = returns[n].get();
@@ -193,6 +193,8 @@ double* getResults(const WindowInfo& info)
                 // delete [] allResults[k];
             }
             std::cout << std::endl;
+            delete [] pieces;
+            delete [] allResults;
         }
     }
     auto t2 = std::chrono::high_resolution_clock::now();

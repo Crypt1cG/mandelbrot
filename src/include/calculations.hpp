@@ -7,7 +7,7 @@
 #pragma once
 
 extern double numIterations;
-extern unsigned int NUM_CPUS;
+extern const unsigned int NUM_CPUS;
 
 double iterate(ComplexNum& z, const ComplexNum& c, int itLeft);
 
