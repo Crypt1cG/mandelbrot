@@ -4,6 +4,7 @@
 #include <iostream>
 #include <exception>
 #include <chrono>
+#include <OpenCL/cl.h>
 // #include <gmp.h>
 #include <thread>
 #include "include/WindowInfo.hpp"
@@ -207,6 +208,16 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 
 int main()
 {
+    //get all platforms (drivers)
+    std::vector<cl::Platform> all_platforms;
+    cl::Platform::get(&all_platforms);
+    if(all_platforms.size()==0){
+        std::cout<<" No platforms found. Check OpenCL installation!\n";
+        exit(1);
+    }
+    cl::Platform default_platform=all_platforms[0];
+    std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+
     sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
     window.setFramerateLimit(60);
 
