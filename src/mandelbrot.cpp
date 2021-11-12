@@ -4,7 +4,7 @@
 #include <iostream>
 #include <exception>
 #include <chrono>
-#include <OpenCL/cl.h>
+// #include <OpenCL/cl.h>
 // #include <gmp.h>
 #include <thread>
 #include "include/WindowInfo.hpp"
@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <ctime>
 double magnification = 1;
+double K = 5;
+int hue = 174;
 /**
  * this just converts a color from HSV to RGB, it is useful because SMFL uses
  * RGB only, and sometimes generating colors in HSV is nice
@@ -80,7 +82,7 @@ sf::Color HSVToRGB(int h, float s, float v)
  * @param V the value of the pixel (returned from iterate)
  * @return an SFML color
  */
-sf::Color getColor(double V, int hue)
+sf::Color getColor(double V)
 {
     if (V == 0) // num is in the mandelbrot set
         return sf::Color::Black;
@@ -115,7 +117,7 @@ sf::Color getColor(double V, int hue)
     //     sf::Color color = HSVToRGB(H, 1, 0.9);
         // return color;
     // }
-    double K = 5;
+    // double K = 5;
     V = log(V) / K;
     // // uint8_t R = 255 * ((1.0 - cos(V)) / 2.0);
     // // uint8_t G = 255 * ((1.0 - cos(V / (3 * M_SQRT2))) / 2.0);
@@ -134,7 +136,7 @@ sf::Color getColor(double V, int hue)
     return HSVToRGB(hue, s, v);
 }
 
-void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target, int hue)
+void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
 {
     window.clear(sf::Color::White);
     int scale = SCALE;
@@ -144,7 +146,7 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     {
         for (int x = 0; x < info.pixelWidth; x++)
         {
-            sf::Color color = getColor(results[y * info.pixelWidth + x], hue);
+            sf::Color color = getColor(results[y * info.pixelWidth + x]);
             uint8_t R = color.r;
             uint8_t G = color.g;
             uint8_t B = color.b;
@@ -211,14 +213,14 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 int main()
 {
     //get all platforms (drivers)
-    std::vector<cl::Platform> all_platforms;
-    cl::Platform::get(&all_platforms);
-    if(all_platforms.size()==0){
-        std::cout<<" No platforms found. Check OpenCL installation!\n";
-        exit(1);
-    }
-    cl::Platform default_platform=all_platforms[0];
-    std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+    // std::vector<cl::Platform> all_platforms;
+    // cl::Platform::get(&all_platforms);
+    // if(all_platforms.size()==0){
+    //     std::cout<<" No platforms found. Check OpenCL installation!\n";
+    //     exit(1);
+    // }
+    // cl::Platform default_platform=all_platforms[0];
+    // std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
 
     sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
     window.setFramerateLimit(60);
@@ -231,11 +233,8 @@ int main()
     target.a = 0.360538544808150618340;
     target.b = -0.64122620321722934023;
     std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
-    int hue = std::rand() % 359;
-    display(results, initial, window, target, hue);
+    display(results, initial, window, target);
     
-    int NUM_CPUS = std::thread::hardware_concurrency();
-
     std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
     {
@@ -309,8 +308,28 @@ int main()
                     delete [] results;
                     results = getResults(initial);
                 }
+                else if (event.key.code == sf::Keyboard::K)
+                {
+                    double oldK = K;
+                    K = (std::rand() % 40 + 1) / 8.0; // random number from 0.5 - 5.5 (increments of 0.5)
+                    while (oldK == K)
+                    {
+                        K = (std::rand() % 40 + 1) / 8.0; // random number from 0.5 - 5.5 (increments of 0.5)
+                    }
+                    // std::cout << "new K: " << K << std::endl;
+                }
+                else if (event.key.code == sf::Keyboard::C)
+                {
+                    double oldHue = hue;
+                    hue = std::rand() % 359;
+                    while (oldHue == hue)
+                    {
+                        hue = std::rand() % 359;
+                    }
+                    // std::cout << "new hue: " << hue << std::endl;
+                }
             }
-            display(results, initial, window, target, hue);
+            display(results, initial, window, target);
         }
     }
     return 0;
