@@ -231,10 +231,10 @@ int main()
     target.a = 0.360538544808150618340;
     target.b = -0.64122620321722934023;
     std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
-    int hue = std::rand() % 358 + 1;
+    int hue = std::rand() % 359;
     display(results, initial, window, target, hue);
     
-    NUM_CPUS = std::thread::hardware_concurrency();
+    int NUM_CPUS = std::thread::hardware_concurrency();
 
     std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
