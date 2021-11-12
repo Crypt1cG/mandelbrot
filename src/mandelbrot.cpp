@@ -9,8 +9,9 @@
 #include "WindowInfo.hpp"
 #include "calculations.hpp"
 #define SCALE 1
+#include <cstdlib>
+#include <ctime>
 double magnification = 1;
-
 /**
  * this just converts a color from HSV to RGB, it is useful because SMFL uses
  * RGB only, and sometimes generating colors in HSV is nice
@@ -78,7 +79,7 @@ sf::Color HSVToRGB(int h, float s, float v)
  * @param V the value of the pixel (returned from iterate)
  * @return an SFML color
  */
-sf::Color getColor(double V)
+sf::Color getColor(double V, int hue)
 {
     if (V == 0) // num is in the mandelbrot set
         return sf::Color::Black;
@@ -128,10 +129,11 @@ sf::Color getColor(double V)
     int H = 174 + 50 * cos(V / 15);
     double v = 0.625 - (cos(V / 4) * .375);
     double s = 1.0 - (sin(V / 3) / 2 + 0.5);
-    return HSVToRGB(174, s, v);
+    // hue is passed through functions for a random color each run
+    return HSVToRGB(hue, s, v);
 }
 
-void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
+void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target, int hue)
 {
     window.clear(sf::Color::White);
     int scale = SCALE;
@@ -141,7 +143,7 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     {
         for (int x = 0; x < info.pixelWidth; x++)
         {
-            sf::Color color = getColor(results[y * info.pixelWidth + x]);
+            sf::Color color = getColor(results[y * info.pixelWidth + x], hue);
             uint8_t R = color.r;
             uint8_t G = color.g;
             uint8_t B = color.b;
@@ -217,8 +219,10 @@ int main()
     ComplexNum target = ComplexNum(0, 0);
     target.a = 0.360538544808150618340;
     target.b = -0.64122620321722934023;
-    display(results, initial, window, target);
-
+    std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
+    int hue = std::rand() % 358 + 1;
+    display(results, initial, window, target, hue);
+    
     NUM_CPUS = std::thread::hardware_concurrency();
     std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
@@ -294,7 +298,7 @@ int main()
                     results = getResults(initial);
                 }
             }
-            display(results, initial, window, target);
+            display(results, initial, window, target, hue);
         }
     }
     return 0;
