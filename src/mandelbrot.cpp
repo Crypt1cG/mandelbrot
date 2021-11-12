@@ -1,13 +1,14 @@
 #include <math.h>
-#include "ComplexNum.hpp"
+#include "include/ComplexNum.hpp"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <exception>
 #include <chrono>
-#include <gmp.h>
+#include <OpenCL/cl.h>
+// #include <gmp.h>
 #include <thread>
-#include "WindowInfo.hpp"
-#include "calculations.hpp"
+#include "include/WindowInfo.hpp"
+#include "include/calculations.hpp"
 #define SCALE 1
 #include <cstdlib>
 #include <ctime>
@@ -209,6 +210,16 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 
 int main()
 {
+    //get all platforms (drivers)
+    std::vector<cl::Platform> all_platforms;
+    cl::Platform::get(&all_platforms);
+    if(all_platforms.size()==0){
+        std::cout<<" No platforms found. Check OpenCL installation!\n";
+        exit(1);
+    }
+    cl::Platform default_platform=all_platforms[0];
+    std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+
     sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
     window.setFramerateLimit(60);
 
@@ -224,6 +235,7 @@ int main()
     display(results, initial, window, target, hue);
     
     NUM_CPUS = std::thread::hardware_concurrency();
+
     std::cout << "Num cpus: " << NUM_CPUS << std::endl;
     while (window.isOpen())
     {

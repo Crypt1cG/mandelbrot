@@ -1,13 +1,7 @@
-#include "ComplexNum.hpp"
-#include "WindowInfo.hpp"
-#include <chrono>
-#include <math.h>
-#include <thread>
-#include <future>
-#pragma once
+#include "include/calculations.hpp"
 
-extern double numIterations;
-extern unsigned int NUM_CPUS;
+unsigned int NUM_CPUS;
+double numIterations = 30;
 
 double iterate(ComplexNum& z, const ComplexNum& c, int itLeft);
 

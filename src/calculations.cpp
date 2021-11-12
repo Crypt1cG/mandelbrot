@@ -1,6 +1,7 @@
-#include "calculations.hpp"
+#include "include/calculations.hpp"
+#include <vector>
 
-unsigned int NUM_CPUS;
+const unsigned int NUM_CPUS = std::thread::hardware_concurrency();
 double numIterations = 30;
 
 double iterate(ComplexNum& z, const ComplexNum& c, int itLeft)
@@ -101,7 +102,7 @@ double* getResults(const WindowInfo& info)
         results2 = ret2.get();
         std::copy(results2, results2 + half2.pixelWidth * half2.pixelHeight, results + half1.pixelHeight * half1.pixelWidth);
     }
-    else // assuming 4 cpus
+    else
     {
         // // chop into 4 pieces
         // WindowInfo quarter1 = WindowInfo(info.minA, info.maxA,
@@ -142,10 +143,10 @@ double* getResults(const WindowInfo& info)
         //                                                                                         quarter2.pixelHeight * quarter2.pixelWidth +
         //                                                                                         quarter3.pixelHeight * quarter3.pixelWidth);
         int index = 0;
-        for (int i = 0; i < 4; i++) // do 4 sections of 4 (16 pieces, 4 at a time)
+        for (int i = 0; i < 16 / NUM_CPUS; i++) // do 4 sections of 4 (16 pieces, 4 at a time)
         {
-            WindowInfo pieces[4] = {};
-            for (int j = i * 4; j < (i + 1) * 4; j++) // j is actual "piece #"
+            WindowInfo* pieces = new WindowInfo[NUM_CPUS];
+            for (int j = i * NUM_CPUS; j < (i + 1) * NUM_CPUS; j++) // j is actual "piece #"
             {
                 WindowInfo piece;
                 if (j == 0) // special case, include the first and last of section (1/16 + 1)
@@ -161,15 +162,27 @@ double* getResults(const WindowInfo& info)
                                        info.minB + (j + 1) * (info.rangeB / 16),
                                        info.step);
                 }
-                pieces[j % 4] = piece;
+                pieces[j % NUM_CPUS] = piece;
             }
-            std::future<double*> ret1 = std::async(calculate, pieces[0], numIterations);
-            std::future<double*> ret2 = std::async(calculate, pieces[1], numIterations);
-            std::future<double*> ret3 = std::async(calculate, pieces[2], numIterations);
-            std::future<double*> ret4 = std::async(calculate, pieces[3], numIterations);
+            std::vector<std::future<double*>> returns;
+            returns.reserve(NUM_CPUS);
+            for (int n = 0; n < NUM_CPUS; n++)
+            {
+                returns.push_back(std::async(calculate, pieces[n], numIterations));
+            }
+            // std::future<double*> ret1 = std::async(calculate, pieces[0], numIterations);
+            // std::future<double*> ret2 = std::async(calculate, pieces[1], numIterations);
+            // std::future<double*> ret3 = std::async(calculate, pieces[2], numIterations);
+            // std::future<double*> ret4 = std::async(calculate, pieces[3], numIterations);
 
-            double* allResults[4] = {ret1.get(), ret2.get(), ret3.get(), ret4.get()};
-            for (int k = 0; k < 4; k++)
+            // array of double arrays (double*), each double* is the results from one of the sections
+            double** allResults = new double*[NUM_CPUS];
+            for (int n = 0; n < NUM_CPUS; n++)
+            {
+                allResults[n] = returns[n].get();
+            }
+            // double* allResults[4] = {ret1.get(), ret2.get(), ret3.get(), ret4.get()};
+            for (int k = 0; k < NUM_CPUS; k++)
             {
                 double* result = allResults[k];
                 WindowInfo inf = pieces[k];
@@ -180,6 +193,8 @@ double* getResults(const WindowInfo& info)
                 // delete [] allResults[k];
             }
             std::cout << std::endl;
+            delete [] pieces;
+            delete [] allResults;
         }
     }
     auto t2 = std::chrono::high_resolution_clock::now();
