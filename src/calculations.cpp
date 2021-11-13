@@ -104,97 +104,109 @@ double* getResults(const WindowInfo& info)
     }
     else
     {
-        // // chop into 4 pieces
-        // WindowInfo quarter1 = WindowInfo(info.minA, info.maxA,
-        //                                 info.minB, info.minB + info.rangeB / 4,
-        //                                 info.step);
-        // WindowInfo quarter2 = WindowInfo(info.minA, info.maxA,
-        //                                 info.minB + info.rangeB / 4 + 1.0 / info.step,
-        //                                 info.minB + info.rangeB / 2,
-        //                                 info.step);
-        // WindowInfo quarter3 = WindowInfo(info.minA, info.maxA,
-        //                                 info.minB + info.rangeB / 2 + 1.0 / info.step,
-        //                                 info.minB + info.rangeB * 0.75,
-        //                                 info.step);
-        // WindowInfo quarter4 = WindowInfo(info.minA, info.maxA,
-        //                                 info.minB + info.rangeB * 0.75 + 1.0 / info.step, info.maxB,
-        //                                 info.step);
-        // // std::cout << quarter1 << std::endl << quarter2 << std::endl << quarter3 << std::endl << quarter4 << std::endl;
         results = new double[info.pixelWidth * info.pixelHeight];
 
-        // // make threads for each piece to do them asynchronously
-        // std::future<double*> ret1 = std::async(calculate, quarter1, numIterations);
-        // std::future<double*> ret2 = std::async(calculate, quarter2, numIterations);
-        // std::future<double*> ret3 = std::async(calculate, quarter3, numIterations);
-        // std::future<double*> ret4 = std::async(calculate, quarter4, numIterations);
+        // int index = 0;
+        // for (int i = 0; i < 16 / NUM_CPUS; i++) // do 4 sections of 4 (16 pieces, 4 at a time)
+        // {
+        //     WindowInfo* pieces = new WindowInfo[NUM_CPUS];
+        //     for (int j = i * NUM_CPUS; j < (i + 1) * NUM_CPUS; j++) // j is actual "piece #"
+        //     {
+        //         WindowInfo piece;
+        //         if (j == 0) // special case, include the first and last of section (1/16 + 1)
+        //         {
+        //             piece = WindowInfo(info.minA, info.maxA,
+        //                                info.minB, info.minB + info.rangeB / 16,
+        //                                info.step);
+        //         }
+        //         else
+        //         {
+        //             piece = WindowInfo(info.minA, info.maxA,
+        //                                info.minB + j * (info.rangeB / 16) + 1.0 / info.step,
+        //                                info.minB + (j + 1) * (info.rangeB / 16),
+        //                                info.step);
+        //         }
+        //         pieces[j % NUM_CPUS] = piece;
+        //     }
+        //     std::vector<std::future<double*>> returns;
+        //     returns.reserve(NUM_CPUS);
+        //     for (int n = 0; n < NUM_CPUS; n++)
+        //     {
+        //         returns.push_back(std::async(calculate, pieces[n], numIterations));
+        //     }
+        //     // std::future<double*> ret1 = std::async(calculate, pieces[0], numIterations);
+        //     // std::future<double*> ret2 = std::async(calculate, pieces[1], numIterations);
+        //     // std::future<double*> ret3 = std::async(calculate, pieces[2], numIterations);
+        //     // std::future<double*> ret4 = std::async(calculate, pieces[3], numIterations);
 
-        // double* tempResults = ret1.get();
-        // std::copy(tempResults, tempResults + quarter1.pixelWidth * quarter1.pixelHeight, results);
-        // delete [] tempResults;
-        // tempResults = ret2.get();
-        // std::copy(tempResults, tempResults + quarter2.pixelWidth * quarter2.pixelHeight, results + quarter1.pixelWidth * quarter1.pixelHeight);
-        // delete [] tempResults;
-        // tempResults = ret3.get();
-        // std::copy(tempResults, tempResults + quarter3.pixelWidth * quarter3.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
-        //                                                                                         quarter2.pixelHeight * quarter2.pixelWidth);
-        // delete [] tempResults;
-        // tempResults = ret4.get();
-        // std::copy(tempResults, tempResults + quarter4.pixelWidth * quarter4.pixelHeight, results + quarter1.pixelHeight * quarter1.pixelWidth + 
-        //                                                                                         quarter2.pixelHeight * quarter2.pixelWidth +
-        //                                                                                         quarter3.pixelHeight * quarter3.pixelWidth);
+        //     // array of double arrays (double*), each double* is the results from one of the sections
+        //     double** allResults = new double*[NUM_CPUS];
+        //     for (int n = 0; n < NUM_CPUS; n++)
+        //     {
+        //         allResults[n] = returns[n].get();
+        //     }
+        //     // double* allResults[4] = {ret1.get(), ret2.get(), ret3.get(), ret4.get()};
+        //     for (int k = 0; k < NUM_CPUS; k++)
+        //     {
+        //         double* result = allResults[k];
+        //         WindowInfo inf = pieces[k];
+        //         std::copy(result, result + inf.pixelHeight * inf.pixelWidth,
+        //                   results + index);
+        //         index += inf.pixelWidth * inf.pixelHeight;
+        //         delete [] result;
+        //         // delete [] allResults[k];
+        //     }
+        //     std::cout << std::endl;
+        //     delete [] pieces;
+        //     delete [] allResults;
+        // }
+
+        unsigned int NUM_PIECES = 16;
         int index = 0;
-        for (int i = 0; i < 16 / NUM_CPUS; i++) // do 4 sections of 4 (16 pieces, 4 at a time)
+        WindowInfo pieces[NUM_PIECES] = {};
+        for (int i = 0; i < NUM_PIECES; i++)
         {
-            WindowInfo* pieces = new WindowInfo[NUM_CPUS];
-            for (int j = i * NUM_CPUS; j < (i + 1) * NUM_CPUS; j++) // j is actual "piece #"
-            {
-                WindowInfo piece;
-                if (j == 0) // special case, include the first and last of section (1/16 + 1)
+            WindowInfo piece;
+                if (i == 0) // special case, include the first and last of section (1/16 + 1)
                 {
                     piece = WindowInfo(info.minA, info.maxA,
-                                       info.minB, info.minB + info.rangeB / 16,
+                                       info.minB, info.minB + info.rangeB / NUM_PIECES,
                                        info.step);
                 }
                 else
                 {
                     piece = WindowInfo(info.minA, info.maxA,
-                                       info.minB + j * (info.rangeB / 16) + 1.0 / info.step,
-                                       info.minB + (j + 1) * (info.rangeB / 16),
+                                       info.minB + i * (info.rangeB / NUM_PIECES) + 1.0 / info.step,
+                                       info.minB + (i + 1) * (info.rangeB / NUM_PIECES),
                                        info.step);
                 }
-                pieces[j % NUM_CPUS] = piece;
-            }
-            std::vector<std::future<double*>> returns;
-            returns.reserve(NUM_CPUS);
-            for (int n = 0; n < NUM_CPUS; n++)
-            {
-                returns.push_back(std::async(calculate, pieces[n], numIterations));
-            }
-            // std::future<double*> ret1 = std::async(calculate, pieces[0], numIterations);
-            // std::future<double*> ret2 = std::async(calculate, pieces[1], numIterations);
-            // std::future<double*> ret3 = std::async(calculate, pieces[2], numIterations);
-            // std::future<double*> ret4 = std::async(calculate, pieces[3], numIterations);
+                pieces[i] = piece;
+        }
 
-            // array of double arrays (double*), each double* is the results from one of the sections
-            double** allResults = new double*[NUM_CPUS];
-            for (int n = 0; n < NUM_CPUS; n++)
-            {
-                allResults[n] = returns[n].get();
-            }
-            // double* allResults[4] = {ret1.get(), ret2.get(), ret3.get(), ret4.get()};
-            for (int k = 0; k < NUM_CPUS; k++)
-            {
-                double* result = allResults[k];
-                WindowInfo inf = pieces[k];
-                std::copy(result, result + inf.pixelHeight * inf.pixelWidth,
-                          results + index);
-                index += inf.pixelWidth * inf.pixelHeight;
-                delete [] result;
-                // delete [] allResults[k];
-            }
-            std::cout << std::endl;
-            delete [] pieces;
-            delete [] allResults;
+        std::vector<std::future<double*>> returns;
+        returns.reserve(NUM_PIECES);
+        for (int n = 0; n < NUM_PIECES; n++)
+        {
+            returns.push_back(std::async(calculate, pieces[n], numIterations));
+        }
+
+        double* allResults[NUM_PIECES] = {};
+        for (int n = 0; n < NUM_PIECES; n++)
+        {
+            allResults[n] = returns[n].get();
+        }
+        std::cout << "hello" << std::endl;
+        for (int k = 0; k < NUM_PIECES; k++)
+        {
+            double* result = allResults[k];
+            WindowInfo inf = pieces[k];
+            // std::cout << "got the things " << "height: " << inf.pixelHeight << " width: " << info.pixelWidth << std::endl;
+            std::copy(result, result + inf.pixelHeight * inf.pixelWidth,
+                        results + index);
+            index += inf.pixelWidth * inf.pixelHeight;
+            delete [] result;
+            // std::cout << "finished number " << k << std::endl;
+            // delete [] allResults[k];
         }
     }
     auto t2 = std::chrono::high_resolution_clock::now();

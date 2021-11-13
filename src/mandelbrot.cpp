@@ -4,7 +4,8 @@
 #include <iostream>
 #include <exception>
 #include <chrono>
-#include <OpenCL/cl.h>
+// #include <OpenCL/cl.h>
+#include <CL/opencl.hpp>
 // #include <gmp.h>
 #include <thread>
 #include "include/WindowInfo.hpp"
