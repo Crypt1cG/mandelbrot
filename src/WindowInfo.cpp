@@ -1,12 +1,13 @@
 #include "include/WindowInfo.hpp"
 
-WindowInfo::WindowInfo(double minA, double maxA, double minB, double maxB, uint64_t step)
+WindowInfo::WindowInfo(double minA, double maxA, double minB, double maxB, uint64_t step, int numIterations)
 {
     this->minA = minA;
     this->maxA = maxA;
     this->minB = minB;
     this->maxB = maxB;
     this->step = step;
+    this->numIterations = numIterations;
 
     rangeA = maxA - minA;
     rangeB = maxB - minB;
@@ -14,9 +15,9 @@ WindowInfo::WindowInfo(double minA, double maxA, double minB, double maxB, uint6
     pixelHeight = rangeB * step + 1;
 }
 
-WindowInfo::WindowInfo() : WindowInfo(0, 0, 0, 0, 0) {};
+WindowInfo::WindowInfo() : WindowInfo(0, 0, 0, 0, 0, 0) {};
 
-void WindowInfo::zoom(double zoomFactor, ComplexNum target, double& numIterations, double& magnification)
+void WindowInfo::zoom(double zoomFactor, ComplexNum target, double& magnification)
 {
     if (zoomFactor > 1)
         numIterations *= 2;

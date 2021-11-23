@@ -1,8 +1,11 @@
-__kernel void iterate(__global double* results, __global const double* a_vals, __global const double* b_vals, int numIterations)
+// #pragma OPENCL EXTENSION cl_amd_printf : enable
+__kernel void iterate(__global double* results, const double minA, const double minB, 
+                      const int sizeA, const int sizeB, const int step, int numIterations)
 {
     int id = get_global_id(0);
-    double c_a = a_vals[id];
-    double c_b = a_vals[id];
+    // results[id] = 1;
+    double c_a = minA + fmod((float)id, sizeA) * (1.0 / step);
+    double c_b = minB + (id / sizeB) * (1.0 / step);
     double z_a = 0, z_b = 0;
     int initialNumIterations = numIterations;
     while (numIterations > 0)
@@ -22,6 +25,7 @@ __kernel void iterate(__global double* results, __global const double* a_vals, _
             results[id] = V;
             return;
         }
+        numIterations--;
     }
     results[id] = 0;
 }

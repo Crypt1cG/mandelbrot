@@ -16,6 +16,8 @@ FILES = src/ComplexNum.cpp src/mandelbrot.cpp src/WindowInfo.cpp src/calculation
 
 all: $(FILES)
 	@$(CXX) $(FILES) $(CXXFLAGS) -Ofast
+opencl: $(FILES)
+	@$(CXX) $(FILES) $(CXXFLAGS) src/openclStuff.c -DOPENCL -g
 debug: $(FILES)
 	@$(CXX) $(FILES) $(CXXFLAGS) -g
 clean:
