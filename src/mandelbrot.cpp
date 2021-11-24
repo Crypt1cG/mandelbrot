@@ -5,9 +5,13 @@
 #include <exception>
 #include <chrono>
 // #include <OpenCL/cl.h>
+// #include <CL/opencl.hpp>
 // #include <gmp.h>
 #include <thread>
 #include "include/WindowInfo.hpp"
+#ifdef OPENCL
+    #include "include/openclStuff.h"
+#endif
 #include "include/calculations.hpp"
 #define SCALE 1
 #include <cstdlib>
@@ -198,7 +202,7 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
     font.loadFromFile("res/Arial Unicode.ttf");
     sf::Text text;
     text.setString("Magnification: " + std::to_string(magnification) + 
-                   "\tIterations: " + std::to_string((int)(numIterations)) + 
+                   "\tIterations: " + std::to_string((int)(info.numIterations)) + 
                    "\tCrosshair: " + std::to_string(target.a) + " + " + std::to_string(-target.b) + "i");
     text.setFont(font);
     text.setPosition(10, 768);
@@ -212,30 +216,24 @@ void display(double* results, const WindowInfo& info, sf::RenderWindow& window, 
 
 int main()
 {
-    //get all platforms (drivers)
-    // std::vector<cl::Platform> all_platforms;
-    // cl::Platform::get(&all_platforms);
-    // if(all_platforms.size()==0){
-    //     std::cout<<" No platforms found. Check OpenCL installation!\n";
-    //     exit(1);
-    // }
-    // cl::Platform default_platform=all_platforms[0];
-    // std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
-
+    #ifdef OPENCL
+        setup();
+    #endif
     sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
     window.setFramerateLimit(60);
 
-    WindowInfo initial(-2, 1, -1.5, 1.5, 256);
+    WindowInfo wInfo(-2, 1, -1.5, 1.5, 256, 30);
     double movement_factor = 2.0;
     double shift = movement_factor;
-    double* results = calculate(initial, numIterations);
+    double* results = getResults(wInfo);
     ComplexNum target = ComplexNum(0, 0);
     target.a = 0.360538544808150618340;
     target.b = -0.64122620321722934023;
     std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
-    display(results, initial, window, target);
     
-    std::cout << "Num cpus: " << NUM_CPUS << std::endl;
+    display(results, wInfo, window, target);
+    // return 0;
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -249,16 +247,17 @@ int main()
             {
                 if (event.key.code == sf::Keyboard::Enter)
                 {
-                    initial.zoom(4, target, numIterations, magnification);
-                    std::cout << initial << std::endl;
+                    std::cout << "you pressed enter" << std::endl;
+                    wInfo.zoom(4, target, magnification);
+                    std::cout << wInfo << std::endl;
                     delete [] results;
-                    results = getResults(initial);
+                    results = getResults(wInfo);
                 }
                 else if (event.key.code == sf::Keyboard::Escape)
                 {
-                    initial.zoom(0.25, target, numIterations, magnification);
+                    wInfo.zoom(0.25, target, magnification);
                     delete [] results;
-                    results = calculate(initial, numIterations);
+                    results = getResults(wInfo);
                 }
                 //added hold shift for faster cursor (sorry need to fix magic numbers ik)
                 else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D)
@@ -268,7 +267,7 @@ int main()
 				        shift = movement_factor * 2;
                     }
 			        else shift = movement_factor;
-			        target.a += shift / initial.step;
+			        target.a += shift / wInfo.step;
                 }
                 else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A)
                 {
@@ -277,7 +276,7 @@ int main()
 				        shift = movement_factor * 2;
                     }
 			        else shift = movement_factor;
-                    target.a -= shift / initial.step;
+                    target.a -= shift / wInfo.step;
                 }
                 else if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W)
                 {
@@ -286,7 +285,7 @@ int main()
 				        shift = movement_factor * 2;
                     }
 			        else shift = movement_factor;
-                    target.b -= shift / initial.step;
+                    target.b -= shift / wInfo.step;
                 }
                 else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S)
                 {
@@ -295,7 +294,7 @@ int main()
 				        shift = movement_factor * 2;
                     }
 			        else shift = movement_factor;
-                    target.b += shift / initial.step;
+                    target.b += shift / wInfo.step;
                 }
                 else if (event.key.code == sf::Keyboard::Space)
                 {
@@ -304,9 +303,9 @@ int main()
                 }
                 else if (event.key.code == sf::Keyboard::I)
                 {
-                    numIterations *= 2;
+                    wInfo.numIterations *= 2;
                     delete [] results;
-                    results = getResults(initial);
+                    results = getResults(wInfo);
                 }
                 else if (event.key.code == sf::Keyboard::K)
                 {
@@ -329,7 +328,7 @@ int main()
                     // std::cout << "new hue: " << hue << std::endl;
                 }
             }
-            display(results, initial, window, target);
+            display(results, wInfo, window, target);
         }
     }
     return 0;

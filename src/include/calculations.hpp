@@ -6,13 +6,12 @@
 #include <future>
 #pragma once
 
-extern double numIterations;
 extern const unsigned int NUM_CPUS;
 
-double iterate(ComplexNum& z, const ComplexNum& c, int itLeft);
+// double iterate(ComplexNum& z, const ComplexNum& c, int itLeft);
 
-int iterateNotNormalized(ComplexNum&z, const ComplexNum& c, int itLeft);
+//int iterateNotNormalized(ComplexNum&z, const ComplexNum& c, int itLeft);
 
-double* calculate(const WindowInfo& info, int numIterations);
+double* calculate(const WindowInfo& info);
 
 double* getResults(const WindowInfo& info);
