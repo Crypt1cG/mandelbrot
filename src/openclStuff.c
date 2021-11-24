@@ -1,6 +1,6 @@
 #ifdef __linux__
     #include <CL/opencl.h>
-#elif __APPLE
+#elif __MACH__ // for mac os
     #include <OpenCL/opencl.h>
 #endif
 #include <stdio.h>
@@ -45,7 +45,11 @@ void setup()
             maxWorkItemSizes[0], maxWorkItemSizes[1], maxWorkItemSizes[2]);
 
     context = clCreateContext(NULL, 1, &device, NULL, NULL, NULL);
+#ifdef __linux__
     queue = clCreateCommandQueueWithProperties(context, device, 0, NULL);
+#elif __MACH__
+    queue = clCreateCommandQueue(context, device, 0, NULL);
+#endif
 
     // open and read opencl kernel file
     FILE* fp = fopen("src/kernel.cl", "r");
