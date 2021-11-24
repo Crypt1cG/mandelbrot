@@ -136,50 +136,109 @@ double* cl_getResults(const double minA, const double maxA,
     // // create device versions of these arrays
     // cl_mem d_a_vals = clCreateBuffer(queue, CL_MEM_READ_ONLY, sizeof(double) * totalSize, NULL, NULL);
     // cl_mem d_b_vals = clCreateBuffer(queue, CL_MEM_READ_ONLY, sizeof(double) * totalSize, NULL, NULL);
+    double* results_arr[9] = {(double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize),
+                              (double*)malloc(sizeof(double) * totalSize)};
+    cl_mem d_results_arr[9] = {clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL),
+                           clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL)};
 
-    // set args for kernel
-    float f_minA = (float)minA; // used for devices with no double precision support
-    float f_minB = (float)minB; // likewise
     cl_int err;
-    err = clSetKernelArg(kern, 0, sizeof(cl_mem), &d_results);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 1, sizeof(double), &minA);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 2, sizeof(double), &minB);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 3, sizeof(int), &sizeA);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 4, sizeof(int), &sizeB);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 5, sizeof(uint64_t), &step);
-    assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 6, sizeof(int), &numIterations);
-    assert(err == CL_SUCCESS);
-    
-    size_t global_work_size = totalSize - 1; // ok so i think this is the total # of work items
-    size_t local_work_size = 512; // and I think this is how many work items per work group
-    err = clEnqueueNDRangeKernel(queue, kern, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
-    if (err == CL_INVALID_WORK_GROUP_SIZE)
+    for (int i = -1; i < 2; i++)
     {
-        printf("invalid work group size\n");
-        printf("global size: %d local size: %d\n", global_work_size, local_work_size);
+        for (int j = -1; j < 2; j++)
+        {
+            double new_minA = minA + i * (1.0 / (step * 3.0));
+            double new_minB = minB + j * (1.0 / (step * 3.0));
+            err = clSetKernelArg(kern, 0, sizeof(cl_mem), &d_results_arr[(i + 1) * 3 + j + 1]);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 1, sizeof(double), &new_minA);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 2, sizeof(double), &new_minB);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 3, sizeof(int), &sizeA);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 4, sizeof(int), &sizeB);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 5, sizeof(uint64_t), &step);
+            assert(err == CL_SUCCESS);
+            err = clSetKernelArg(kern, 6, sizeof(int), &numIterations);
+            assert(err == CL_SUCCESS);
+
+            size_t global_work_size = totalSize - 1; // ok so i think this is the total # of work items
+            size_t local_work_size = 128; // and I think this is how many work items per work group
+            err = clEnqueueNDRangeKernel(queue, kern, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+
+            err = clFinish(queue);
+            assert(err == CL_SUCCESS);
+            clEnqueueReadBuffer(queue, d_results_arr[(i + 1) * 3 + j + 1], CL_TRUE, 0, sizeof(double) * totalSize,
+                                results_arr[(i + 1) * 3 + j + 1], 0, NULL, NULL);
+        }
     }
-    else if (err == CL_INVALID_WORK_DIMENSION)
-        printf("work_dim is not valid\n");
-    else if (err == CL_INVALID_GLOBAL_WORK_SIZE)
-        printf("global_work_size is not valid\n");
-    else if (err == CL_INVALID_WORK_ITEM_SIZE)
-        printf("the number of work-items specified by in any of local_work_size[0],"
-               "... local_work_size[work_dim - 1] is greated than the corresponding"
-               "values specified by CL_DEVICE_MAX_WORK_ITEM_SIZES[0], ..., "
-               "CL_DEVICE_MAX_WORK_ITEM_SIZES[work_dim - 1]\n");
-    else if (err == CL_INVALID_KERNEL_ARGS)
-        printf("invalid kernel args\n");
-    // printf("%d\n", err);
     
-    assert(err == CL_SUCCESS);
-    err = clFinish(queue);
-    assert(err == CL_SUCCESS);
-    clEnqueueReadBuffer(queue, d_results, CL_TRUE, 0, sizeof(double) * totalSize, results, 0, NULL, NULL);
+    // // set args for kernel
+    // float f_minA = (float)minA; // used for devices with no double precision support
+    // float f_minB = (float)minB; // likewise
+    // err = clSetKernelArg(kern, 0, sizeof(cl_mem), &d_results);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 1, sizeof(double), &minA);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 2, sizeof(double), &minB);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 3, sizeof(int), &sizeA);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 4, sizeof(int), &sizeB);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 5, sizeof(uint64_t), &step);
+    // assert(err == CL_SUCCESS);
+    // err = clSetKernelArg(kern, 6, sizeof(int), &numIterations);
+    // assert(err == CL_SUCCESS);
+    
+    // size_t global_work_size = totalSize - 1; // ok so i think this is the total # of work items
+    // size_t local_work_size = 128; // and I think this is how many work items per work group
+    // err = clEnqueueNDRangeKernel(queue, kern, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+    // if (err == CL_INVALID_WORK_GROUP_SIZE)
+    // {
+    //     printf("invalid work group size\n");
+    //     printf("global size: %d local size: %d\n", global_work_size, local_work_size);
+    // }
+    // else if (err == CL_INVALID_WORK_DIMENSION)
+    //     printf("work_dim is not valid\n");
+    // else if (err == CL_INVALID_GLOBAL_WORK_SIZE)
+    //     printf("global_work_size is not valid\n");
+    // else if (err == CL_INVALID_WORK_ITEM_SIZE)
+    //     printf("the number of work-items specified by in any of local_work_size[0],"
+    //            "... local_work_size[work_dim - 1] is greated than the corresponding"
+    //            "values specified by CL_DEVICE_MAX_WORK_ITEM_SIZES[0], ..., "
+    //            "CL_DEVICE_MAX_WORK_ITEM_SIZES[work_dim - 1]\n");
+    // else if (err == CL_INVALID_KERNEL_ARGS)
+    //     printf("invalid kernel args\n");
+    // // printf("%d\n", err);
+    
+    // assert(err == CL_SUCCESS);
+    // err = clFinish(queue);
+    // assert(err == CL_SUCCESS);
+    // clEnqueueReadBuffer(queue, d_results, CL_TRUE, 0, sizeof(double) * totalSize, results, 0, NULL, NULL);
+    for (int i = 0; i < totalSize; i++)
+    {
+        double sum = 0;
+        for (int j = 0; j < 9; j++)
+        {
+            sum += results_arr[j][i];
+        }
+        results[i] = sum / 9;
+    }
     return results;
 }
