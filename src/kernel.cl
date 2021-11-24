@@ -9,6 +9,9 @@ __kernel void iterate(__global double* results, const double minA, const double 
     double z_a = 0, z_b = 0;
     unsigned long initialNumIterations = numIterations;
     // printf("id: %d, sizeA: %d, sizeB: %d, minA: %f, c: %f + %fi, z: %f + %fi, numIterations: %d\n", id, sizeA, sizeB, minA, c_a, c_b, z_a, z_b, numIterations);
+    int period = 0;
+    double z_a_old = 0;
+    double z_b_old = 0;
     while (numIterations > 0)
     {
         // square
@@ -27,6 +30,18 @@ __kernel void iterate(__global double* results, const double minA, const double 
             return;
         }
         numIterations--;
+        // if (z_a == z_a_old && z_b == z_b_old)
+        // {
+        //     results[id] = 0;
+        //     return;
+        // }
+        // period++;
+        // if (period > 20)
+        // {
+        //     period = 0;
+        //     z_a_old = z_a;
+        //     z_b_old = z_b;
+        // }
     }
     results[id] = 0;
 }

@@ -19,6 +19,8 @@
 double magnification = 1;
 double K = 5;
 int hue = 174;
+int hueDelta = 50;
+int hueRateOfChange = 15; // bigger = lower rate of change
 /**
  * this just converts a color from HSV to RGB, it is useful because SMFL uses
  * RGB only, and sometimes generating colors in HSV is nice
@@ -133,11 +135,11 @@ sf::Color getColor(double V)
     // // uint8_t B = 30;
     // return sf::Color(R, G, B, 255);
 
-    int H = 174 + 50 * cos(V / 15);
+    int H = (int)(hue + hueDelta * cos(V / hueRateOfChange)) % 359;
     double v = 0.625 - (cos(V / 4) * .375);
     double s = 1.0 - (sin(V / 3) / 2 + 0.5);
     // hue is passed through functions for a random color each run
-    return HSVToRGB(hue, s, v);
+    return HSVToRGB(H, s, v);
 }
 
 void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
@@ -264,7 +266,7 @@ int main()
                 {
                 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                     {
-				        shift = movement_factor * 2;
+				        shift = movement_factor * 3;
                     }
 			        else shift = movement_factor;
 			        target.a += shift / wInfo.step;
@@ -273,7 +275,7 @@ int main()
                 {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                     {
-				        shift = movement_factor * 2;
+				        shift = movement_factor * 3;
                     }
 			        else shift = movement_factor;
                     target.a -= shift / wInfo.step;
@@ -282,7 +284,7 @@ int main()
                 {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                     {
-				        shift = movement_factor * 2;
+				        shift = movement_factor * 3;
                     }
 			        else shift = movement_factor;
                     target.b -= shift / wInfo.step;
@@ -291,7 +293,7 @@ int main()
                 {
                     if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
                     {
-				        shift = movement_factor * 2;
+				        shift = movement_factor * 3;
                     }
 			        else shift = movement_factor;
                     target.b += shift / wInfo.step;
@@ -325,7 +327,23 @@ int main()
                     {
                         hue = std::rand() % 359;
                     }
-                    // std::cout << "new hue: " << hue << std::endl;
+                    std::cout << "new hue: " << hue << std::endl;
+                }
+                else if (event.key.code == sf::Keyboard::X)
+                {
+                    double oldHueDelta = hueDelta;
+                    hueDelta = std::rand() % 359;
+                    while (oldHueDelta == hueDelta)
+                        hueDelta = std::rand() % 359;
+                    std::cout << "new hue delta: " << hueDelta << std::endl;
+                }
+                else if (event.key.code == sf::Keyboard::Z)
+                {
+                    double oldROC = hueRateOfChange;
+                    hueRateOfChange = std::rand() % 100 + 1;
+                    while (oldROC == hueRateOfChange)
+                        hueRateOfChange = std::rand() % 100 + 1;
+                    std::cout << "new rate of change: " << hueRateOfChange << std::endl;
                 }
             }
             display(results, wInfo, window, target);

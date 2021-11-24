@@ -53,8 +53,8 @@ void setup()
 
     // open and read opencl kernel file
     FILE* fp = fopen("src/kernel.cl", "r");
-    char* source = (char*)malloc(1500);
-    size_t sourceSize = fread(source, 1, 1500, fp);
+    char* source = (char*)malloc(2000);
+    size_t sourceSize = fread(source, 1, 2000, fp);
     fclose(fp);
 
     cl_int err = 0;
@@ -187,7 +187,7 @@ double* cl_getResults(const double minA, const double maxA,
                                 results_arr[(i + 1) * 3 + j + 1], 0, NULL, NULL);
         }
     }
-    
+
     // // set args for kernel
     // float f_minA = (float)minA; // used for devices with no double precision support
     // float f_minB = (float)minB; // likewise
