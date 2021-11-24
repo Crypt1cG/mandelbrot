@@ -57,8 +57,8 @@ void setup()
     program = clCreateProgramWithSource(context, 1, (const char**)&source, &sourceSize, &err);
     assert(err == CL_SUCCESS);
 
-    const char* options = "-cl-std=CL3.0";
-    err = clBuildProgram(program, 1, &device, options, NULL, NULL);
+    // const char* options = "-cl-std=CL3.0";
+    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err == CL_INVALID_PROGRAM)
         printf("program is not a valid program object\n");
     else if (err == CL_INVALID_VALUE)
@@ -108,11 +108,13 @@ void setup()
 
 double* cl_getResults(const double minA, const double maxA,
                       const double minB, const double maxB,
-                      const int step, const int numIterations)
+                      const uint64_t step, const int numIterations)
 {
     int sizeA = (maxA - minA) * step + 1;
     int sizeB = (maxB - minB) * step + 1;
+    printf("size a: %d, size b: %d\n", sizeA, sizeB);
     int totalSize = sizeA * sizeB;
+    printf("minA: %.17f, minB: %f, step: %llu, totalSize: %d\n", minA, minB, step, totalSize);
 
     double* results = (double*)malloc(sizeof(double) * totalSize);
     cl_mem d_results = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(double) * totalSize, NULL, NULL);
@@ -132,6 +134,8 @@ double* cl_getResults(const double minA, const double maxA,
     // cl_mem d_b_vals = clCreateBuffer(queue, CL_MEM_READ_ONLY, sizeof(double) * totalSize, NULL, NULL);
 
     // set args for kernel
+    float f_minA = (float)minA; // used for devices with no double precision support
+    float f_minB = (float)minB; // likewise
     cl_int err;
     err = clSetKernelArg(kern, 0, sizeof(cl_mem), &d_results);
     assert(err == CL_SUCCESS);
@@ -143,7 +147,7 @@ double* cl_getResults(const double minA, const double maxA,
     assert(err == CL_SUCCESS);
     err = clSetKernelArg(kern, 4, sizeof(int), &sizeB);
     assert(err == CL_SUCCESS);
-    err = clSetKernelArg(kern, 5, sizeof(int), &step);
+    err = clSetKernelArg(kern, 5, sizeof(uint64_t), &step);
     assert(err == CL_SUCCESS);
     err = clSetKernelArg(kern, 6, sizeof(int), &numIterations);
     assert(err == CL_SUCCESS);
@@ -167,7 +171,7 @@ double* cl_getResults(const double minA, const double maxA,
                "CL_DEVICE_MAX_WORK_ITEM_SIZES[work_dim - 1]\n");
     else if (err == CL_INVALID_KERNEL_ARGS)
         printf("invalid kernel args\n");
-    printf("%d\n", err);
+    // printf("%d\n", err);
     
     assert(err == CL_SUCCESS);
     err = clFinish(queue);
