@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lgmp -lgmpxx -std=c++17 -pthread -o bin/mandelbrot
+CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -std=c++17 -pthread -o bin/mandelbrot
 
 # https://stackoverflow.com/questions/714100/os-detecting-makefile
 UNAME_S := $(shell uname -s)
