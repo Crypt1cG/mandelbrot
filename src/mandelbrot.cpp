@@ -232,7 +232,6 @@ int main()
     target.a = 0.360538544808150618340;
     target.b = -0.64122620321722934023;
     std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
-    
     display(results, wInfo, window, target);
     // return 0;
 
@@ -345,8 +344,8 @@ int main()
                         hueRateOfChange = std::rand() % 100 + 1;
                     std::cout << "new rate of change: " << hueRateOfChange << std::endl;
                 }
+                display(results, wInfo, window, target);
             }
-            display(results, wInfo, window, target);
         }
     }
     return 0;
