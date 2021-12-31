@@ -1,4 +1,5 @@
 #include <math.h>
+#include <wx/wx.h>
 #include "include/ComplexNum.hpp"
 #include <SFML/Graphics.hpp>
 #include <iostream>
@@ -350,3 +351,53 @@ int main()
     }
     return 0;
 }
+
+class App : public wxApp
+{
+public:
+	virtual bool OnInit();
+};
+
+class Frame : public wxFrame
+{
+public:
+	Frame();
+
+private:
+	void OnExit(wxCommandEvent& event);
+	void OnKeyPressed(wxKeyEvent& event);
+};
+
+bool App::OnInit()
+{
+	Frame* frame = new Frame();
+	frame->Show(true);
+	return true;
+}
+
+Frame::Frame() : wxFrame(NULL, wxID_ANY, "Mandelbrot")
+{
+	Bind(wxEVT_MENU, &Frame::OnExit, this, wxID_EXIT);
+	Bind(wxEVT_KEY_DOWN, &Frame::OnKeyPressed);
+}
+
+void Frame::OnExit(wxCommandEvent& event)
+{
+	Close(true);
+}
+
+void Frame::OnKeyPressed(wxKeyEvent& event)
+{
+	wxChar uc = event.GetUnicodeKey();
+	if (uc != WXK_NONE)
+	{
+		if (uc == WXK_RETURN) // enter key was pressed
+		{
+			// zoom in, redraw
+		}
+		
+	}
+}
+
+draw()
+wxIMPLEMENT_APP(App);
