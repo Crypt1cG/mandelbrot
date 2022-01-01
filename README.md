@@ -6,9 +6,9 @@
 - You will need the g++ compiler to compile the project using the makefile
 - If you have another compiler, you can compile manually (just look at the makefile)
 
-### SFML
-- You will need SFML installed on your system and added to your PATH for compilation to work
-- SFML can be found here: https://www.sfml-dev.org/index.php
+### wxWidgets
+- You will need wxWidgets installed on your system with a working `wx-config` for compilation to work
+- wxWidgets can be found here: https://www.wxwidgets.org/, or installed with packages managers (e.g. ```$ brew install wxwidgets``` or `# pacman -S wxwidgets`)
 
 ### OpenCL
 - If you care to try the OpenCL version of the program (by using `make opencl`), you will need a functional installation of OpenCL
