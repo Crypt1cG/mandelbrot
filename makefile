@@ -1,5 +1,6 @@
 CXX = g++
-CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -std=c++17 -pthread -o bin/mandelbrot `wx-config --libs` `wx-config --cxxflags`
+# CXXFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -std=c++17 -pthread -o bin/mandelbrot `wx-config --libs` `wx-config --cxxflags`
+CXXFLAGS = -std=c++17 -pthread -o bin/mandelbrot `wx-config --libs` `wx-config --cxxflags`
 
 # https://stackoverflow.com/questions/714100/os-detecting-makefile
 UNAME_S := $(shell uname -s)

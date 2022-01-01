@@ -15,6 +15,11 @@ public:
      */
     ComplexNum(double a, double b);
 
+	/**
+	 * defualt constructor - makes a complex # with a = 0, b = 0
+	 */
+	ComplexNum() : ComplexNum(0, 0) {};
+	
     /**
      * Adds another complex number to this complex number
      * 

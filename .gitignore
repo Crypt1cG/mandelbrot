@@ -2,3 +2,4 @@
 obj/*
 *.dSYM
 *.DS_Store
+.cache/*

@@ -17,7 +17,7 @@ __kernel void iterate(__global double* results, const double minA, const double 
         // square
         double old_a = z_a;
         z_a = (z_a + z_b) * (z_a - z_b);
-        z_b = 2 * old_a * z_b;
+        z_b = (old_a + old_a) * z_b;
 
         // z += c
         z_a += c_a;

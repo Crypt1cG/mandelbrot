@@ -1,7 +1,7 @@
 #include <math.h>
+#include <vector>
 #include <wx/wx.h>
 #include "include/ComplexNum.hpp"
-#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <exception>
 #include <chrono>
@@ -22,6 +22,8 @@ double K = 5;
 int hue = 174;
 int hueDelta = 50;
 int hueRateOfChange = 15; // bigger = lower rate of change
+double value = 0.625;
+
 /**
  * this just converts a color from HSV to RGB, it is useful because SMFL uses
  * RGB only, and sometimes generating colors in HSV is nice
@@ -29,11 +31,11 @@ int hueRateOfChange = 15; // bigger = lower rate of change
  * @param h the hue of the color (0 - 360)
  * @param s the saturation value of the color (0.0 - 1.0)
  * @param v the value of the volor (0.0 - 1.0)
- * 
+ *
  * @return an SMFL color object with the correct RGB values
  */
-sf::Color HSVToRGB(int h, float s, float v)
-{   
+wxImage::RGBValue HSVToRGB(int h, float s, float v)
+{
     double C = s * v;
     double X = C * (1 - abs((fmod(h / 60.0, 2)) - 1));
     double m = v - C;
@@ -79,20 +81,21 @@ sf::Color HSVToRGB(int h, float s, float v)
     uint8_t G = (g + m) * 255;
     uint8_t B = (b + m) * 255;
 
-    return sf::Color(R, G, B, 255);
+    return wxImage::RGBValue(R, G, B);
 }
+
 
 /**
  * Gets the appropriate color for a pixel based on its value V (which comes
  * from the iterate function)
- * 
+ *
  * @param V the value of the pixel (returned from iterate)
  * @return an SFML color
  */
-sf::Color getColor(double V)
+wxImage::RGBValue getColor(double V)
 {
     if (V == 0) // num is in the mandelbrot set
-        return sf::Color::Black;
+        return wxImage::RGBValue(0, 0, 0);
     // else
     // {
     //     R = 255 * ((1 + cos(2 * M_PI * val)) / 2);
@@ -137,219 +140,11 @@ sf::Color getColor(double V)
     // return sf::Color(R, G, B, 255);
 
     int H = (int)(hue + hueDelta * cos(V / hueRateOfChange)) % 359;
-    double v = 0.625 - (cos(V / 4) * .375);
+    double v = std::min(abs(value - (cos(V / 4) * .375)), 1.0);
     double s = 1.0 - (sin(V / 3) / 2 + 0.5);
     // hue is passed through functions for a random color each run
-    return HSVToRGB(H, s, v);
-}
-
-void display(double* results, const WindowInfo& info, sf::RenderWindow& window, const ComplexNum& target)
-{
-    window.clear(sf::Color::White);
-    int scale = SCALE;
-    sf::Image img;
-    uint8_t* pixels = new uint8_t[4 * info.pixelWidth * info.pixelHeight];
-    for (int y = 0; y < info.pixelHeight; y++)
-    {
-        for (int x = 0; x < info.pixelWidth; x++)
-        {
-            sf::Color color = getColor(results[y * info.pixelWidth + x]);
-            uint8_t R = color.r;
-            uint8_t G = color.g;
-            uint8_t B = color.b;
-            pixels[4 * (y * info.pixelWidth + x)] = R;
-            pixels[4 * (y * info.pixelWidth + x) + 1] = G;
-            pixels[4 * (y * info.pixelWidth + x) + 2] = B;
-            pixels[4 * (y * info.pixelWidth + x) + 3] = 255;
-        }
-    }
-
-    double midA = (info.minA + info.maxA) / 2;
-    double deltaA = target.a - midA;
-    int pixelX = info.pixelWidth / 2 + deltaA * info.step;
-
-    double midB = (info.minB + info.maxB) / 2;
-    double deltaB = target.b - midB;
-    int pixelY = info.pixelHeight / 2 + deltaB * info.step;
-    // white crosshair
-    int offsets[][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-    for (auto offset : offsets)
-    {
-        int x = pixelX + offset[0];
-        int y = pixelY + offset[1];
-        int index = 4 * (y * info.pixelWidth + x);
-        for (int i = 0; i < 3; i++)
-            pixels[index + i] = 255;
-    }
-
-    // black outline
-    int offsets2[][2] = {{-2, 0},  {2, 0},   {0, 2},  {0, -2},
-                         {-1, -1}, {-1, 1},  {1, 1},  {1, -1},
-                         {-2, 1},  {-2, -1}, {2, 1},  {2, -1},
-                         {1, 2},   {-1, 2},  {1, -2}, {-1, -2}};
-    for (auto offset : offsets2)
-    {
-        int x = pixelX + offset[0];
-        int y = pixelY + offset[1];
-        int index = 4 * (y * info.pixelWidth + x);
-        for (int i = 0; i < 3; i++)
-            pixels[index + i] = 0;
-    }
-    
-    img.create(info.pixelWidth, info.pixelHeight, pixels);
-    sf::Texture texture;
-    texture.loadFromImage(img);
-    sf::Sprite sprite(texture);
-    window.draw(sprite);
-    sf::Font font;
-    font.loadFromFile("res/Arial Unicode.ttf");
-    sf::Text text;
-    text.setString("Magnification: " + std::to_string(magnification) + 
-                   "\tIterations: " + std::to_string((int)(info.numIterations)) + 
-                   "\tCrosshair: " + std::to_string(target.a) + " + " + std::to_string(-target.b) + "i");
-    text.setFont(font);
-    text.setPosition(10, 768);
-    text.setCharacterSize(20);
-    text.setFillColor(sf::Color::Black);
-    window.draw(text);
-
-    window.display();
-    delete [] pixels;
-}
-
-int main()
-{
-    #ifdef OPENCL
-        setup();
-    #endif
-    sf::RenderWindow window(sf::VideoMode(800, 800), "Mandelbrot");
-    window.setFramerateLimit(60);
-
-    WindowInfo wInfo(-2, 1, -1.5, 1.5, 256, 30);
-    double movement_factor = 2.0;
-    double shift = movement_factor;
-    double* results = getResults(wInfo);
-    ComplexNum target = ComplexNum(0, 0);
-    target.a = 0.360538544808150618340;
-    target.b = -0.64122620321722934023;
-    std::srand(std::time(0)); //so rand num is not the same every time !!! (rand based off of current time)
-    display(results, wInfo, window, target);
-    // return 0;
-
-    while (window.isOpen())
-    {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            // std::cout << "Event received" << std::endl;
-            // "close requested" event: we close the window
-            if (event.type == sf::Event::Closed)
-                window.close();
-            else if (event.type == sf::Event::KeyPressed)
-            {
-                if (event.key.code == sf::Keyboard::Enter)
-                {
-                    std::cout << "you pressed enter" << std::endl;
-                    wInfo.zoom(4, target, magnification);
-                    std::cout << wInfo << std::endl;
-                    delete [] results;
-                    results = getResults(wInfo);
-                }
-                else if (event.key.code == sf::Keyboard::Escape)
-                {
-                    wInfo.zoom(0.25, target, magnification);
-                    delete [] results;
-                    results = getResults(wInfo);
-                }
-                //added hold shift for faster cursor (sorry need to fix magic numbers ik)
-                else if (event.key.code == sf::Keyboard::Right || event.key.code == sf::Keyboard::D)
-                {
-                	if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                    {
-				        shift = movement_factor * 3;
-                    }
-			        else shift = movement_factor;
-			        target.a += shift / wInfo.step;
-                }
-                else if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::A)
-                {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                    {
-				        shift = movement_factor * 3;
-                    }
-			        else shift = movement_factor;
-                    target.a -= shift / wInfo.step;
-                }
-                else if (event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::W)
-                {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                    {
-				        shift = movement_factor * 3;
-                    }
-			        else shift = movement_factor;
-                    target.b -= shift / wInfo.step;
-                }
-                else if (event.key.code == sf::Keyboard::Down || event.key.code == sf::Keyboard::S)
-                {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::RShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-                    {
-				        shift = movement_factor * 3;
-                    }
-			        else shift = movement_factor;
-                    target.b += shift / wInfo.step;
-                }
-                else if (event.key.code == sf::Keyboard::Space)
-                {
-                    std::cout.precision(20);
-                    std::cout << target.a << " + " << target.b << "i" << std::endl;
-                }
-                else if (event.key.code == sf::Keyboard::I)
-                {
-                    wInfo.numIterations *= 2;
-                    delete [] results;
-                    results = getResults(wInfo);
-                }
-                else if (event.key.code == sf::Keyboard::K)
-                {
-                    double oldK = K;
-                    K = (std::rand() % 40 + 1) / 8.0; // random number from 0.5 - 5.5 (increments of 0.5)
-                    while (oldK == K)
-                    {
-                        K = (std::rand() % 40 + 1) / 8.0; // random number from 0.5 - 5.5 (increments of 0.5)
-                    }
-                    // std::cout << "new K: " << K << std::endl;
-                }
-                else if (event.key.code == sf::Keyboard::C)
-                {
-                    double oldHue = hue;
-                    hue = std::rand() % 359;
-                    while (oldHue == hue)
-                    {
-                        hue = std::rand() % 359;
-                    }
-                    std::cout << "new hue: " << hue << std::endl;
-                }
-                else if (event.key.code == sf::Keyboard::X)
-                {
-                    double oldHueDelta = hueDelta;
-                    hueDelta = std::rand() % 359;
-                    while (oldHueDelta == hueDelta)
-                        hueDelta = std::rand() % 359;
-                    std::cout << "new hue delta: " << hueDelta << std::endl;
-                }
-                else if (event.key.code == sf::Keyboard::Z)
-                {
-                    double oldROC = hueRateOfChange;
-                    hueRateOfChange = std::rand() % 100 + 1;
-                    while (oldROC == hueRateOfChange)
-                        hueRateOfChange = std::rand() % 100 + 1;
-                    std::cout << "new rate of change: " << hueRateOfChange << std::endl;
-                }
-                display(results, wInfo, window, target);
-            }
-        }
-    }
-    return 0;
+	wxImage::HSVValue hsv(H / 360.0, s, v);
+    return wxImage::HSVtoRGB(hsv);
 }
 
 class App : public wxApp
@@ -358,46 +153,269 @@ public:
 	virtual bool OnInit();
 };
 
+class Panel : public wxPanel
+{
+public:
+	Panel(wxWindow* parent);
+private:
+	WindowInfo wInfo;
+	double* results;
+	ComplexNum target;
+	double magnification;
+	double movement_factor;
+
+	wxSlider* hueSlider;
+	wxSlider* hueDeltaSlider;
+	wxSlider* hueROCSlider;
+	wxSlider* valueSlider;
+	wxSlider* kSlider;
+
+	void render(wxDC& dc);
+	void paintEvent(wxPaintEvent& event);
+	void paintNow();
+	void OnKeyPressed(wxKeyEvent& event);
+	void OnSlider(wxCommandEvent& event);
+};
+
 class Frame : public wxFrame
 {
 public:
 	Frame();
 
 private:
+	Panel* panel;
 	void OnExit(wxCommandEvent& event);
-	void OnKeyPressed(wxKeyEvent& event);
 };
 
 bool App::OnInit()
 {
+	wxInitAllImageHandlers();
 	Frame* frame = new Frame();
 	frame->Show(true);
+	SetTopWindow(frame);
 	return true;
 }
 
 Frame::Frame() : wxFrame(NULL, wxID_ANY, "Mandelbrot")
 {
+	SetInitialSize(wxSize(1000, 800));
+	wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
+	panel = new Panel(this);
+	sizer->Add(panel, 1, wxEXPAND);
+	this->SetSizer(sizer);
 	Bind(wxEVT_MENU, &Frame::OnExit, this, wxID_EXIT);
-	Bind(wxEVT_KEY_DOWN, &Frame::OnKeyPressed);
+}
+
+Panel::Panel(wxWindow* parent) : wxPanel(parent)
+{
+	movement_factor = 2.0;
+	wInfo = WindowInfo(-2, 1, -1.5, 1.5, 256, 30);
+	results = getResults(wInfo);
+
+	hueSlider = new wxSlider(this, 0, 174, 0, 360);
+	hueSlider->SetPosition(wxPoint(800, 20));
+
+	hueDeltaSlider = new wxSlider(this, 1, 50, 0, 360);
+	hueDeltaSlider->SetPosition(wxPoint(800, 50));
+
+	hueROCSlider = new wxSlider(this, 2, 15, 1, 50);
+	hueROCSlider->SetPosition(wxPoint(800, 80));
+
+	valueSlider = new wxSlider(this, 3, 62, 0, 100);
+	valueSlider->SetPosition(wxPoint(800, 110));
+
+	kSlider = new wxSlider(this, 4, 40, 1, 80);
+	kSlider->SetPosition(wxPoint(800, 140));
+
+    // target.a = 0.360538544808150618340;
+	target = ComplexNum(0, 0);
+    target.a = 0.360240443437614363236125244449545308482607807958585750488375814740195346059218100311752936722773426396233731729724987737320035372683285317664532401218521579554288661726564324134702299962817029213329980895208036363104546639698106204384566555001322985619004717862781192694046362748742863016467354574422779443226982622356594130430232458472420816652623492974891730419252651127672782407292315574480207005828774566475024380960675386215814315654794021855269375824443853463117354448779647099224311848192893972572398662626725254769950976527431277402440752868498588785436705371093442460696090720654908973712759963732914849861213100695402602927267843779747314419332179148608587129105289166676461292845685734536033692577618496925170576714796693411776794742904333484665301628662532967079174729170714156810530598764525260869731233845987202037712637770582084286587072766838497865108477149114659838883818795374195150936369987302574377608649625020864292915913378927790344097552591919409137354459097560040374880346637533711271919419723135538377394364882968994646845930838049998854075817859391340445151448381853615103761584177161812057928;
+    // target.b = -0.64122620321722934023;
+    target.b = -0.6413130610648031748603750151793020665794949522823052595561775430644485741727536902556370230689681162370740565537072149790106973211105273740851993394803287437606238596262287731075999483940467161288840614581091294325709988992269165007394305732683208318834672366947550710920088501655704252385244481168836426277052232593412981472237968353661477793530336607247738951625817755401065045362273039788332245567345061665756708689359294516668271440525273653083717877701237756144214394870245598590883973716531691124286669552803640414068523325276808909040317617092683826521501539932397262012011082098721944643118695001226048977430038509470101715555439047884752058334804891389685530946112621573416582482926221804767466258346014417934356149837352092608891639072745930639364693513216719114523328990690069588676087923656657656023794484324797546024248328156586471662631008741349069961493817600100133439721557969263221185095951241491408756751582471307537382827924073746760884081704887902040036056611401378785952452105099242499241003208013460878442953408648178692353788153787229940221611731034405203519945313911627314900851851072122990492499999999999999999991;
+	std::srand(std::time(0)); // so rand num is not the same every time ! (rand based on current time)
+
+	Bind(wxEVT_CHAR, &Panel::OnKeyPressed, this);
+	Bind(wxEVT_PAINT, &Panel::paintEvent, this);
+	//EVT_SCROLL(Panel::OnSlider);
+	//hueSlider->Bind(wxEVT_SCROLL_CHANGED, &Panel::OnSlider, this);
+	Bind(wxEVT_COMMAND_SLIDER_UPDATED, &Panel::OnSlider, this);
 }
 
 void Frame::OnExit(wxCommandEvent& event)
 {
+	std::cout << "OnExit called" << std::endl;
 	Close(true);
 }
 
-void Frame::OnKeyPressed(wxKeyEvent& event)
+void Panel::OnKeyPressed(wxKeyEvent& event)
 {
 	wxChar uc = event.GetUnicodeKey();
 	if (uc != WXK_NONE)
 	{
+		std::cout << "you pressed: " << (char)uc << std::endl;
 		if (uc == WXK_RETURN) // enter key was pressed
 		{
 			// zoom in, redraw
+			std::cout << "you pressed enter" << std::endl;
+			wInfo.zoom(4, target, magnification);
+			std::cout << wInfo << std::endl;
+			delete [] results;
+			results = getResults(wInfo);
 		}
-		
+		else if (uc == WXK_ESCAPE)
+		{
+			wInfo.zoom(0.25, target, magnification);
+			delete [] results;
+			results = getResults(wInfo);
+		}
+		else if (uc == 'w')
+			target.b -= movement_factor / wInfo.step;
+		else if (uc == 's')
+			target.b += movement_factor / wInfo.step;
+		else if (uc == 'd')
+			target.a += movement_factor / wInfo.step;
+		else if (uc == 'a')
+			target.a -= movement_factor / wInfo.step;
+		// capital letters indicate that shift was held down
+		else if (uc == 'W')
+			target.b -= (movement_factor * 3) / wInfo.step;
+		else if (uc == 'S')
+			target.b += (movement_factor * 3) / wInfo.step;
+		else if (uc == 'D')
+			target.a += (movement_factor * 3) / wInfo.step;
+		else if (uc == 'A')
+			target.a -= (movement_factor * 3) / wInfo.step;
+
+		else if (uc == 'z')
+		{
+			int oldROC = hueRateOfChange;
+			hueRateOfChange = std::rand() % 100 + 1;
+			while (oldROC == hueRateOfChange)
+				hueRateOfChange = std::rand() % 100 + 1;
+			std::cout << "new hue rate of change: " << hueRateOfChange << std::endl;
+		}
+		else if (uc == 'x')
+		{
+			int oldHueDelta = hueDelta;
+			while (oldHueDelta == hueDelta)
+				hueDelta = std::rand() % 359;
+			std::cout << "new hue delta: " << hueDelta << std::endl;
+		}
+		else if (uc == 'c')
+		{
+			int oldHue = hue;
+			while (oldHue == hue)
+				hue = std::rand() % 359;
+			std::cout << "new hue: " << hue << std::endl;
+		}
+		else if (uc == 'v')
+		{
+			double oldValue = value;
+			while (oldValue == value)
+				value = (double)std::rand() / RAND_MAX;
+			std::cout << "new vaue: " << value << std::endl;
+		}
+		else if (uc == 'k')
+		{
+			double oldK = K;
+			while (oldK == K)
+				K = (std::rand() % 40 + 1) / 8.0; // random number from 0.5 - 5.5 (increments of 0.5)
+		}
+		else if (uc == 'i')
+		{
+			wInfo.numIterations *= 2;
+			delete [] results;
+			results = getResults(wInfo);
+		}
+		paintNow();
+	}
+	else
+	{
+		int num = event.GetKeyCode();
+		if (num == WXK_UP)
+			target.b -= movement_factor / wInfo.step;
+		else if (num == WXK_DOWN)
+			target.b += movement_factor / wInfo.step;
+		else if (num == WXK_RIGHT)
+			target.a += movement_factor / wInfo.step;
+		else if (num == WXK_LEFT)
+			target.a -= movement_factor / wInfo.step;
+		paintNow();
 	}
 }
 
-draw()
+void Panel::paintEvent(wxPaintEvent& event)
+{
+	wxPaintDC dc(this);
+	render(dc);
+}
+
+void Panel::paintNow()
+{
+	wxClientDC dc(this);
+	render(dc);
+}
+
+void Panel::render(wxDC& dc)
+{
+	wxImage image(wInfo.pixelWidth, wInfo.pixelHeight);
+	for (int x = 0; x < wInfo.pixelWidth; x++)
+	{
+		for (int y = 0; y < wInfo.pixelHeight; y++)
+		{
+			auto color = getColor(results[(y) * wInfo.pixelWidth + x]);
+			image.SetRGB(x, y, color.red, color.green, color.blue);
+		}
+	}
+	int targetX = (target.a - wInfo.minA) * wInfo.step + 1;
+	int targetY = (target.b - wInfo.minB) * wInfo.step + 1;
+	image.SetRGB(targetX, targetY, 255, 255, 255);
+	image.SetRGB(targetX + 1, targetY, 255, 255, 255);
+	image.SetRGB(targetX - 1, targetY, 255, 255, 255);
+	image.SetRGB(targetX, targetY + 1, 255, 255, 255);
+	image.SetRGB(targetX, targetY - 1, 255, 255, 255);
+
+	std::vector<std::vector<int>> coords = {
+		{2, 0}, {2, 1}, {2, -1}, {-2, 0}, {-2, 1}, {-2, -1},
+		{0, 2}, {1, 2}, {-1, 2}, {0, -2}, {1, -2}, {-1, -2},
+		{-1, 1}, {-1, -1}, {1, 1}, {1, -1}
+	};
+	for (auto c : coords)
+		image.SetRGB(targetX + c[0], targetY + c[1], 0, 0, 0);
+
+	wxBitmap bmp(image);
+	dc.DrawBitmap(bmp, 0, 0, false);
+}
+
+void Panel::OnSlider(wxCommandEvent& event)
+{
+	int id = event.GetId();
+	int val = event.GetInt();
+	if (id == 0) // hue slider
+	{
+		hue = val;
+		paintNow();
+	}
+	else if (id == 1) // hue delta slider
+	{
+		hueDelta = val;
+		paintNow();
+	}
+	else if (id == 2) // hue rate of change
+	{
+		hueRateOfChange = val;
+		paintNow();
+	}
+	else if (id == 3) // value
+	{
+		value = val / 100.0;
+		paintNow();
+	}
+	else if (id == 4) // K
+	{
+		K = val / 8.0;
+		paintNow();
+	}
+}
+
 wxIMPLEMENT_APP(App);
