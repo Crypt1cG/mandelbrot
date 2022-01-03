@@ -139,7 +139,9 @@ wxImage::RGBValue getColor(double V)
     // // uint8_t B = 30;
     // return sf::Color(R, G, B, 255);
 
-    int H = (int)(hue + hueDelta * cos(V / hueRateOfChange)) % 359;
+    int H = (int)(hue + hueDelta * cos(V / hueRateOfChange));
+	if (H < 0) H += 359;
+	else H %= 359;
     double v = std::min(abs(value - (cos(V / 4) * .375)), 1.0);
     double s = 1.0 - (sin(V / 3) / 2 + 0.5);
     // hue is passed through functions for a random color each run
@@ -165,10 +167,15 @@ private:
 	double movement_factor;
 
 	wxSlider* hueSlider;
+	wxStaticText* hueText;
 	wxSlider* hueDeltaSlider;
+	wxStaticText* hueDeltaText;
 	wxSlider* hueROCSlider;
+	wxStaticText* hueROCText;
 	wxSlider* valueSlider;
+	wxStaticText* valueText;
 	wxSlider* kSlider;
+	wxStaticText* kText;
 
 	void render(wxDC& dc);
 	void paintEvent(wxPaintEvent& event);
@@ -212,20 +219,30 @@ Panel::Panel(wxWindow* parent) : wxPanel(parent)
 	wInfo = WindowInfo(-2, 1, -1.5, 1.5, 256, 30);
 	results = getResults(wInfo);
 
-	hueSlider = new wxSlider(this, 0, 174, 0, 360);
+	hueSlider = new wxSlider(this, 0, 174, 0, 360, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
 	hueSlider->SetPosition(wxPoint(800, 20));
 
-	hueDeltaSlider = new wxSlider(this, 1, 50, 0, 360);
-	hueDeltaSlider->SetPosition(wxPoint(800, 50));
+	hueText = new wxStaticText(this, wxID_ANY, "Hue:", wxPoint(800, 45));
 
-	hueROCSlider = new wxSlider(this, 2, 15, 1, 50);
-	hueROCSlider->SetPosition(wxPoint(800, 80));
+	hueDeltaSlider = new wxSlider(this, 1, 50, 0, 360, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
+	hueDeltaSlider->SetPosition(wxPoint(800, 70));
 
-	valueSlider = new wxSlider(this, 3, 62, 0, 100);
-	valueSlider->SetPosition(wxPoint(800, 110));
+	hueDeltaText = new wxStaticText(this, wxID_ANY, "Hue range:", wxPoint(800, 95));
 
-	kSlider = new wxSlider(this, 4, 40, 1, 80);
-	kSlider->SetPosition(wxPoint(800, 140));
+	hueROCSlider = new wxSlider(this, 2, 15, 1, 50, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
+	hueROCSlider->SetPosition(wxPoint(800, 120));
+
+	hueROCText = new wxStaticText(this, wxID_ANY, "Hue period:", wxPoint(800, 145));
+
+	valueSlider = new wxSlider(this, 3, 62, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
+	valueSlider->SetPosition(wxPoint(800, 170));
+
+	valueText = new wxStaticText(this, wxID_ANY, "Value:", wxPoint(800, 195));
+
+	kSlider = new wxSlider(this, 4, 40, 1, 80, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
+	kSlider->SetPosition(wxPoint(800, 220));
+
+	kText = new wxStaticText(this, wxID_ANY, "K:", wxPoint(800, 245));
 
     // target.a = 0.360538544808150618340;
 	target = ComplexNum(0, 0);

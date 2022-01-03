@@ -1,4 +1,5 @@
 #include "include/calculations.hpp"
+#include <cmath>
 #ifdef OPENCL
     #include "include/openclStuff.h"
 #endif
@@ -235,4 +236,13 @@ double* getResults(const WindowInfo& info)
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     std::cout << "Total: " << duration.count() << " milliseconds" << std::endl;
     return results;
+}
+
+std::vector<double> getCoefficients(int n, double z_n)
+{
+	std::vector<double> coefficients = {1, 0, 0, 0, 0}; 
+	for (int i = 0; i < n; i++)
+	{
+		coefficients[0] = 2 * z_n * coefficients[0] + 1;
+	}
 }
