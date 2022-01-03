@@ -348,15 +348,18 @@ void Panel::OnKeyPressed(wxKeyEvent& event)
 	}
 	else
 	{
+		bool shift = event.ShiftDown();
 		int num = event.GetKeyCode();
+		double move_amnt = movement_factor;
+		if (shift) move_amnt *= 3;
 		if (num == WXK_UP)
-			target.b -= movement_factor / wInfo.step;
+			target.b -= move_amnt / wInfo.step;
 		else if (num == WXK_DOWN)
-			target.b += movement_factor / wInfo.step;
+			target.b += move_amnt / wInfo.step;
 		else if (num == WXK_RIGHT)
-			target.a += movement_factor / wInfo.step;
+			target.a += move_amnt / wInfo.step;
 		else if (num == WXK_LEFT)
-			target.a -= movement_factor / wInfo.step;
+			target.a -= move_amnt / wInfo.step;
 		paintNow();
 	}
 }
