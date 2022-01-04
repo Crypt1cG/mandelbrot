@@ -239,7 +239,7 @@ Panel::Panel(wxWindow* parent) : wxPanel(parent)
 
 	valueText = new wxStaticText(this, wxID_ANY, "Value:", wxPoint(800, 195));
 
-	kSlider = new wxSlider(this, 4, 40, 1, 80, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
+	kSlider = new wxSlider(this, 4, 80, 2, 160, wxDefaultPosition, wxDefaultSize, wxSL_VALUE_LABEL);
 	kSlider->SetPosition(wxPoint(800, 220));
 
 	kText = new wxStaticText(this, wxID_ANY, "K:", wxPoint(800, 245));
@@ -433,7 +433,7 @@ void Panel::OnSlider(wxCommandEvent& event)
 	}
 	else if (id == 4) // K
 	{
-		K = val / 8.0;
+		K = val / 16.0;
 		paintNow();
 	}
 }
