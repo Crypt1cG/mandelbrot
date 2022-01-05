@@ -197,6 +197,9 @@ private:
 bool App::OnInit()
 {
 	wxInitAllImageHandlers();
+#ifdef OPENCL
+	setup();
+#endif
 	Frame* frame = new Frame();
 	frame->Show(true);
 	SetTopWindow(frame);

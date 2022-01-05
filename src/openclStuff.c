@@ -14,6 +14,7 @@ static cl_kernel kern;
 
 void setup()
 {
+	printf("hola!!!!!\n");
     cl_platform_id* platforms = (cl_platform_id*)malloc(sizeof(cl_platform_id) * 3);
     clGetPlatformIDs(3, platforms, NULL);
     char* info = (char*)malloc(sizeof(char) * 50);
@@ -163,6 +164,18 @@ double* cl_getResults(const double minA, const double maxA,
             double new_minA = minA + i * (1.0 / (step * 3.0));
             double new_minB = minB + j * (1.0 / (step * 3.0));
             err = clSetKernelArg(kern, 0, sizeof(cl_mem), &d_results_arr[(i + 1) * 3 + j + 1]);
+			switch (err)
+			{
+				case CL_INVALID_KERNEL:
+					printf("invalid kernel\n");
+					break;
+				case CL_INVALID_ARG_INDEX:
+					printf("invalid arg index\n");
+					break;
+				case CL_INVALID_ARG_VALUE:
+					printf("invalid arg value\n");
+					break;
+			}
             assert(err == CL_SUCCESS);
             err = clSetKernelArg(kern, 1, sizeof(double), &new_minA);
             assert(err == CL_SUCCESS);
