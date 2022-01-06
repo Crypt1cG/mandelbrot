@@ -17,7 +17,7 @@
 #define SCALE 1
 #include <cstdlib>
 #include <ctime>
-double magnification = 1;
+//double magnification = 1;
 double K = 5;
 int hue = 174;
 int hueDelta = 50;
@@ -177,6 +177,8 @@ private:
 	wxSlider* kSlider;
 	wxStaticText* kText;
 
+	wxTextCtrl* zoomFactorBox;
+
 	void render(wxDC& dc);
 	void paintEvent(wxPaintEvent& event);
 	void paintNow();
@@ -219,6 +221,8 @@ Frame::Frame() : wxFrame(NULL, wxID_ANY, "Mandelbrot")
 Panel::Panel(wxWindow* parent) : wxPanel(parent)
 {
 	movement_factor = 2.0;
+	magnification = 1;
+
 	wInfo = WindowInfo(-2, 1, -1.5, 1.5, 256, 30);
 	results = getResults(wInfo);
 
@@ -246,6 +250,8 @@ Panel::Panel(wxWindow* parent) : wxPanel(parent)
 	kSlider->SetPosition(wxPoint(800, 220));
 
 	kText = new wxStaticText(this, wxID_ANY, "K:", wxPoint(800, 245));
+
+	zoomFactorBox = new wxTextCtrl(this, wxID_ANY, "4", wxPoint(800, 340));
 
     // target.a = 0.360538544808150618340;
 	target = ComplexNum(0, 0);
@@ -276,8 +282,10 @@ void Panel::OnKeyPressed(wxKeyEvent& event)
 		if (uc == WXK_RETURN) // enter key was pressed
 		{
 			// zoom in, redraw
+			std::string zoomAmnt = zoomFactorBox->GetLineText(0).ToStdString();
+			int num = std::stoi(zoomAmnt);
 			std::cout << "you pressed enter" << std::endl;
-			wInfo.zoom(4, target, magnification);
+			wInfo.zoom(num, target, magnification);
 			std::cout << wInfo << std::endl;
 			delete [] results;
 			results = getResults(wInfo);
@@ -408,6 +416,8 @@ void Panel::render(wxDC& dc)
 
 	wxBitmap bmp(image);
 	dc.DrawBitmap(bmp, 0, 0, false);
+	wxString msg = wxString::Format("zoom: %.0f", magnification);
+	dc.DrawText(msg, wxPoint(800, 300));
 }
 
 void Panel::OnSlider(wxCommandEvent& event)

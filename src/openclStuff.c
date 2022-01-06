@@ -14,7 +14,6 @@ static cl_kernel kern;
 
 void setup()
 {
-	printf("hola!!!!!\n");
     cl_platform_id* platforms = (cl_platform_id*)malloc(sizeof(cl_platform_id) * 3);
     clGetPlatformIDs(3, platforms, NULL);
     char* info = (char*)malloc(sizeof(char) * 50);

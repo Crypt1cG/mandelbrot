@@ -20,8 +20,8 @@ WindowInfo::WindowInfo() : WindowInfo(0, 0, 0, 0, 0, 0) {};
 void WindowInfo::zoom(double zoomFactor, ComplexNum target, double& magnification)
 {
     if (zoomFactor > 1)
-        numIterations *= 2;
-    else numIterations /= 2;
+        numIterations *= zoomFactor / 2;
+    else numIterations /= zoomFactor / 2;
     rangeA = rangeA / zoomFactor;
     rangeB = rangeB / zoomFactor;
 
