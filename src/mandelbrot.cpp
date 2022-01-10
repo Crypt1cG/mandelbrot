@@ -283,7 +283,7 @@ void Panel::OnKeyPressed(wxKeyEvent& event)
 		{
 			// zoom in, redraw
 			std::string zoomAmnt = zoomFactorBox->GetLineText(0).ToStdString();
-			int num = std::stoi(zoomAmnt);
+			double num = std::stod(zoomAmnt);
 			std::cout << "you pressed enter" << std::endl;
 			wInfo.zoom(num, target, magnification);
 			std::cout << wInfo << std::endl;
@@ -292,7 +292,9 @@ void Panel::OnKeyPressed(wxKeyEvent& event)
 		}
 		else if (uc == WXK_ESCAPE)
 		{
-			wInfo.zoom(0.25, target, magnification);
+			std::string zoomAmnt = zoomFactorBox->GetLineText(0).ToStdString();
+			double num = 1 / std::stod(zoomAmnt);
+			wInfo.zoom(num, target, magnification);
 			delete [] results;
 			results = getResults(wInfo);
 		}

@@ -21,7 +21,7 @@ void WindowInfo::zoom(double zoomFactor, ComplexNum target, double& magnificatio
 {
     if (zoomFactor > 1)
         numIterations *= zoomFactor / 2;
-    else numIterations /= zoomFactor / 2;
+    else numIterations *= zoomFactor * 2;
     rangeA = rangeA / zoomFactor;
     rangeB = rangeB / zoomFactor;
 
