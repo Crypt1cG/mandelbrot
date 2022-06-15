@@ -39,8 +39,8 @@ void setup()
     clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), workItemsPerGroup, NULL);
     clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * 3, maxWorkItemSizes, NULL);
 
-    printf("Device Name: %s\n# of Compute Units: %u\n# Work Items per Group: %u\nMax"
-           "Clock Speed %uMhz\nMax Work Item Sizes: %u x %u x %u\n",
+    printf("Device Name: %s\n# of Compute Units: %u\n# Work Items per Group: %lu\nMax"
+           "Clock Speed %uMhz\nMax Work Item Sizes: %lu x %lu x %lu\n",
             deviceName, *numComputeUnits, *workItemsPerGroup, *clockSpeed,
             maxWorkItemSizes[0], maxWorkItemSizes[1], maxWorkItemSizes[2]);
 
@@ -61,8 +61,8 @@ void setup()
     program = clCreateProgramWithSource(context, 1, (const char**)&source, &sourceSize, &err);
     assert(err == CL_SUCCESS);
 
-    // const char* options = "-cl-std=CL3.0";
-    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    const char* options = "";
+    err = clBuildProgram(program, 1, &device, options, NULL, NULL);
     if (err == CL_INVALID_PROGRAM)
         printf("program is not a valid program object\n");
     else if (err == CL_INVALID_VALUE)

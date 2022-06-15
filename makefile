@@ -19,25 +19,28 @@ OBJECTS = bin/ComplexNum.o bin/WindowInfo.o bin/calculations.o bin/mandelbrot.o
 
 # @ supresses output from command
 all: $(OBJECTS)
-	@$(CXX) $(OBJECTS) $(CXXFLAGS) `$(WXTHING) --libs` `$(WXTHING) --cxxflags` -Ofast -o bin/mandelbrot
+	$(CXX) $(OBJECTS) $(CXXFLAGS) `$(WXTHING) --libs` -Ofast -o bin/mandelbrot
 
 bin/ComplexNum.o: src/ComplexNum.cpp
-	@$(CXX) $^ $(CXXFLAGS) -c -o bin/ComplexNum.o
+	$(CXX) $^ $(CXXFLAGS) -c -o bin/ComplexNum.o
 
 bin/WindowInfo.o: src/WindowInfo.cpp
-	@$(CXX) $^ $(CXXFLAGS) -c -o bin/WindowInfo.o
+	$(CXX) $^ $(CXXFLAGS) -c -o bin/WindowInfo.o
 
 bin/mandelbrot.o: src/mandelbrot.cpp
-	@$(CXX) $^ $(CXXFLAGS) `$(WXTHING) --cxxflags` -c -o bin/mandelbrot.o
+	$(CXX) $^ $(CXXFLAGS) `$(WXTHING) --cxxflags` -c -o bin/mandelbrot.o
 
 bin/calculations.o: src/calculations.cpp
-	@$(CXX) $^ $(CXXFLAGS) -c -o bin/calculations.o
+	$(CXX) $^ $(CXXFLAGS) -c -o bin/calculations.o
 
-opencl: bin/ComplexNum.o bin/WindowInfo.o 
-	@$(CXX) $^ $(CXXFLAGS) $(OPENCL_FLAGS) `$(WXTHING) --cxxflags` `$(WXTHING) --libs` src/mandelbrot.cpp src/calculations.cpp src/openclStuff.c -DOPENCL -Ofast -o bin/mandelbrot
+bin/openclStuff.o: src/openclStuff.c
+	$(CXX) $^ $(CXXFLAGS) -c -o bin/openclStuff.o 
+
+opencl: bin/ComplexNum.o bin/WindowInfo.o bin/openclStuff.o
+	$(CXX) $^ $(CXXFLAGS) $(OPENCL_FLAGS) `$(WXTHING) --cxxflags` `$(WXTHING) --libs` src/mandelbrot.cpp src/calculations.cpp -DOPENCL -Ofast -o bin/mandelbrot
 
 debug: $(OBJECTS)
-	@$(CXX) $(OBJECTS) $(CXXFLAGS) $(WXFLAGS) -g -o bin/mandelbrot
+	$(CXX) $(OBJECTS) $(CXXFLAGS) $(WXFLAGS) -g -o bin/mandelbrot
 
 clean:
-	@$(RM) bin/mandelbrot $(OBJECTS)
+	$(RM) bin/mandelbrot $(OBJECTS) bin/openclStuff.o

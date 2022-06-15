@@ -208,7 +208,7 @@ bool App::OnInit()
 	return true;
 }
 
-Frame::Frame() : wxFrame(NULL, wxID_ANY, "Mandelbrot")
+Frame::Frame() : wxFrame(NULL, wxID_ANY, "Mandelbrot", wxPoint(0, 50))
 {
 	SetInitialSize(wxSize(1000, 800));
 	wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
