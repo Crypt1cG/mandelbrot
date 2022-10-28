@@ -68,6 +68,7 @@ double* calculate(const WindowInfo& info)
             // super sampling stuff - use 3x3 grid of sub-pixels (centered on the
             // main pixel) and average them to get the value for the pixel - this
             // is super sampling, it helps reduce graininess
+			/**/
             for (int i = -1; i < 2; i++)
             {
                 for (int j = -1; j < 2; j++)
@@ -86,11 +87,14 @@ double* calculate(const WindowInfo& info)
             }
 
             results[index] = sum / 9;
-            // c.a = a;
-            // c.b = b;
-            // z.a = 0;
-            // z.b = 0;
-            // results[index] = iterate(z, c, info.numIterations);
+			// no super sampling
+			/**
+            c.a = a;
+            c.b = b;
+            z.a = 0;
+            z.b = 0;
+            results[index] = iterate(z, c, info.numIterations);
+			*/
             index++;
         }
     }
